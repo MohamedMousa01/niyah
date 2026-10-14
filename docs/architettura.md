@@ -1,6 +1,6 @@
 # Niyah — Architettura (Fase 1)
 
-Versione 0.2 · 13 ottobre 2026 · Documento di riferimento per tutte le fasi successive.
+Versione 0.3 · 14 ottobre 2026 · Documento di riferimento per tutte le fasi successive.
 
 Priorità che guidano ogni scelta (dal master prompt, §66): **affidabilità → offline → notifiche corrette → integrità dei contenuti islamici → privacy/sicurezza → prestazioni → semplicità → scalabilità → estetica.**
 
@@ -274,14 +274,18 @@ service cloud.firestore {
 
 Più **App Check** obbligatorio su Firestore e Functions (Play Integrity / App Attest), così le letture pubbliche vengono solo dalla tua app.
 
-### 4.4 Cloud Functions previste
+### 4.4 Cloud Functions ✅ (codice in `firebase/functions/`)
 
 | Funzione | Trigger | Cosa fa |
 |---|---|---|
-| `setAdminRole` | callable (solo superAdmin) | imposta i custom claims, scrive audit |
-| `onContentWrite` | onWrite su contenuti/argomenti/modelli/eventi | aggiorna `updatedAt` e incrementa `meta/contentVersion` per le lingue toccate; impedisce `published` senza `verified` |
-| `sendCampaigns` | schedulata (es. ogni 15 min) | invia le push FCM ai topic delle campagne attive in scadenza |
-| `exportSeed` | manuale | esporta i contenuti `published` per generare `niyah_seed.db` |
+| `onContentItemWrite` | scrittura su `contentItems/{id}` | se il contenuto era o è pubblicato: incrementa `meta/contentVersion.version.<lingua>` (tutte e 4); se non è più pubblicato: scrive una tombstone. Un contenuto `verified`/`published` senza `verifiedBy` e `verifiedAt` torna in `review` (con voce in `adminAudit`). Se viene archiviato o cancellato, archivia le sue traduzioni pubblicate |
+| `onTranslationWrite` | scrittura su `contentItems/{id}/translations/{lang}` | se il contenuto è pubblicato e cambia un campo visibile della traduzione, aggiorna `updatedAt` del contenuto (così la sync lo riscarica) |
+| `onCategoryWrite`, `onTopicWrite`, `onTopicContentWrite`, `onNotificationTemplateWrite`, `onIslamicEventWrite` | scrittura sulla collezione | come sopra con `active == true`; la tombstone di `topicContent` porta anche `topicId` e `contentId` |
+| `setAdminRole` | callable (solo superAdmin) | `{uid, role}` (`role` = ruolo o `null`): imposta il custom claim, aggiorna la copia `adminRoles/{uid}`, scrive `adminAudit`; se un ruolo esistente viene tolto o cambiato, revoca le sessioni. Un superAdmin non può togliersi il ruolo da solo |
+| `sendCampaigns` | schedulata (es. ogni 15 min) | da fare (Fase 16): push FCM ai topic delle campagne attive |
+| `exportSeed` | manuale | da fare: esporta i contenuti `published` per generare `niyah_seed.db` |
+
+Il primo superAdmin di ogni ambiente si assegna una volta sola con `firebase/functions/scripts/first-superadmin.js` dal proprio computer.
 
 ### 4.5 Ambienti (§47)
 
@@ -395,7 +399,7 @@ Introduzione nell'interfaccia: "Stai combattendo con un peccato o un'abitudine c
 1. All'avvio, solo se online e dopo che la Home è visibile: 1 lettura di `meta/contentVersion`.
 2. Se la versione della lingua attiva > locale: query `where('updatedAt', '>', lastSync)` sulle collezioni di contenuto, filtrate per `status == 'published'` (o `active`), paginate a 100.
 3. Scrittura in SQLite in una transazione, aggiornamento di `lastSync`.
-4. Record diventati `archived`/`inactive` vengono rimossi in locale (per questo non si cancellano mai fisicamente su Firestore: si cambia lo stato).
+4. Prima dei documenti cambiati si leggono le `tombstones` nuove e si rimuovono in locale i record ritirati (per questo non si cancellano mai fisicamente su Firestore: si cambia lo stato). Prima le tombstone, poi i documenti: un contenuto ritirato e poi ripubblicato torna correttamente.
 5. Errore → silenzio, nuovo tentativo alla prossima apertura o al prossimo job in background, con backoff (1h, 6h, 24h).
 
 Costo tipico: 1 lettura al giorno quando non c'è nulla di nuovo.
@@ -478,7 +482,7 @@ Già nativi in FlutterFlow, da **non** reimplementare: posizione una tantum, aut
 
 Progetto **FlutterFlow web separato** (ottimizzato per desktop/tablet), stesso Firebase. Motivi: nessun codice admin dentro l'app pubblicata, app mobile più leggera, permessi più semplici da verificare.
 
-Flusso dei contenuti (§48): `draft → review → verified → published` (+ `archived`). La Cloud Function `onContentWrite` rifiuta `published` se non c'è `verifiedBy`. Ogni hadith richiede raccolta, numero, grado, fonte; ogni versetto richiede sura, ayat, testo arabo, traduzione con traduttore e lingua.
+Flusso dei contenuti (§48): `draft → review → verified → published` (+ `archived`). Le regole rifiutano `verified`/`published` senza `verifiedBy` e `verifiedAt`; la Cloud Function `onContentItemWrite` riporta comunque in `review` ciò che arriva dalla console o dall'Admin SDK. Ogni hadith richiede raccolta, numero, grado, fonte; ogni versetto richiede sura, ayat, testo arabo, traduzione con traduttore e lingua.
 
 **Fonti dei testi (da verificare con attenzione, non decise qui):** per il testo arabo del Corano esistono edizioni digitali verificate con licenze che impongono attribuzione e divieto di modifica; anche le traduzioni in italiano, inglese e francese hanno licenze proprie. Prima di caricare qualunque contenuto va verificato che la licenza ne permetta l'uso in un'app gratuita. Io non genero né riassumo testi coranici o hadith: il pannello serve proprio a farli inserire e verificare da persone qualificate.
 

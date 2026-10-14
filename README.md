@@ -11,6 +11,7 @@ L'interfaccia si costruisce in **FlutterFlow**. Questo repository contiene ciò 
 | [`flutterflow/custom_actions/`](flutterflow/) | custom action da incollare in FlutterFlow, con la guida di collegamento | `flutter analyze` |
 | [`seed/`](seed/) | schema del database locale e script che costruisce il database incluso nell'app | `python3 -m unittest` |
 | [`firebase/`](firebase/) | regole di sicurezza Firestore, indici e test con l'emulatore | `npm test` |
+| [`firebase/functions/`](firebase/functions/) | Cloud Functions: versione dei contenuti, tombstone, verifica, ruoli admin | `npm test` |
 
 ## Principi tecnici
 - Il database locale è la fonte di verità; Firebase serve solo a distribuire contenuti nuovi e, con un account, a sincronizzare.
@@ -29,4 +30,7 @@ python3 -m unittest discover -s seed/tests
 
 # regole Firestore (serve Java per l'emulatore)
 cd firebase && npm install && npm test
+
+# Cloud Functions (Java per gli emulatori)
+cd firebase/functions && npm install && npm test
 ```

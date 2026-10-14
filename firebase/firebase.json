@@ -3,11 +3,27 @@
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
   },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": ["node_modules", ".git", "*.log", "src", "test", "lib/test", "scripts"],
+      "predeploy": ["npm --prefix \"$RESOURCE_DIR\" run build"]
+    }
+  ],
   "emulators": {
     "singleProjectMode": true,
     "firestore": {
       "host": "127.0.0.1",
       "port": 8080
+    },
+    "functions": {
+      "host": "127.0.0.1",
+      "port": 5001
+    },
+    "auth": {
+      "host": "127.0.0.1",
+      "port": 9099
     },
     "ui": {
       "enabled": false
