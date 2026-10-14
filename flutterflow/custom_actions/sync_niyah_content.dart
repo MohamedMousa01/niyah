@@ -83,7 +83,9 @@ Future<String> _sync(NiyahRuntime rt, FirebaseFirestore fs, String lang) async {
     await rt.setMeta('last_sync_contentItems', null);
   }
 
-  var changed = 0;
+  // Prima le tombstone, poi i documenti cambiati: un contenuto ritirato e poi
+  // ripubblicato viene tolto e subito riscaricato, non perso.
+  var changed = await _applyTombstones(rt, fs);
 
   changed += await _pull(rt, fs, 'categories', 'active', true, (tx, id, d, _) async {
     await tx.insert('categories', {
@@ -103,9 +105,19 @@ Future<String> _sync(NiyahRuntime rt, FirebaseFirestore fs, String lang) async {
     rt, fs, 'contentItems', 'status', 'published',
     // Solo la traduzione pubblicata nella lingua attiva. Nessun ripiego
     // silenzioso su un'altra lingua (§24): senza traduzione il contenuto non c'è.
+    // Query e non get: le regole negano il get (anche una query per
+    // documentId) su una traduzione in bozza o inesistente, e un solo rifiuto
+    // farebbe fallire tutta la sync. Costo: 1 lettura per traduzione pubblicata.
     prefetch: (id, d) async {
-      final tr = await fs.doc('contentItems/$id/translations/$lang').get(_serverOnly).timeout(_timeout);
-      return tr.data();
+      final tr = await fs
+          .collection('contentItems/$id/translations')
+          .where('status', isEqualTo: 'published')
+          .get(_serverOnly)
+          .timeout(_timeout);
+      for (final doc in tr.docs) {
+        if (doc.id == lang) return doc.data();
+      }
+      return null;
     },
     (tx, id, d, extra) async {
       await _deleteContent(tx, id);
@@ -166,8 +178,6 @@ Future<String> _sync(NiyahRuntime rt, FirebaseFirestore fs, String lang) async {
     }
   });
 
-  changed += await _applyTombstones(rt, fs);
-
   await rt.setMeta('content_version_$lang', remoteVersion);
   await rt.setMeta('content_lang', lang);
   await rt.setMeta('last_content_sync', DateTime.now().toUtc().toIso8601String());
@@ -223,35 +233,42 @@ Future<int> _applyTombstones(NiyahRuntime rt, FirebaseFirestore fs) async {
     'islamicEvents': ('events', 'id'),
   };
   final since = DateTime.tryParse(await rt.meta('last_sync_tombstones') ?? '');
-  var q = fs.collection('tombstones').orderBy('removedAt').limit(500);
+  var q = fs.collection('tombstones').orderBy('removedAt').limit(_pageSize);
   if (since != null) q = q.where('removedAt', isGreaterThan: Timestamp.fromDate(since));
-  final page = await q.get(_serverOnly).timeout(_timeout);
-  if (page.docs.isEmpty) return 0;
   final db = await rt.database();
-  await db.transaction((tx) async {
-    for (final doc in page.docs) {
-      final d = doc.data();
-      final coll = d['collection'] as String?;
-      final id = d['docId'] as String?;
-      if (id == null) continue;
-      if (coll == 'topicContent') {
-        // La tombstone di un collegamento porta topicId e contentId.
-        final topicId = d['topicId'], contentId = d['contentId'];
-        if (topicId is String && contentId is String) {
-          await tx.delete('topic_content', where: 'topic_id = ? AND content_id = ?', whereArgs: [topicId, contentId]);
+  var count = 0;
+  DocumentSnapshot<Map<String, dynamic>>? last;
+  while (true) {
+    final page = await (last == null ? q : q.startAfterDocument(last)).get(_serverOnly).timeout(_timeout);
+    if (page.docs.isEmpty) break;
+    await db.transaction((tx) async {
+      for (final doc in page.docs) {
+        final d = doc.data();
+        final coll = d['collection'] as String?;
+        final id = d['docId'] as String?;
+        if (id == null) continue;
+        if (coll == 'topicContent') {
+          // La tombstone di un collegamento porta topicId e contentId.
+          final topicId = d['topicId'], contentId = d['contentId'];
+          if (topicId is String && contentId is String) {
+            await tx.delete('topic_content', where: 'topic_id = ? AND content_id = ?', whereArgs: [topicId, contentId]);
+          }
+          continue;
         }
-        continue;
+        if (coll == 'contentItems') {
+          await _deleteContent(tx, id);
+          continue;
+        }
+        final t = tables[coll];
+        if (t != null) await tx.delete(t.$1, where: '${t.$2} = ?', whereArgs: [id]);
       }
-      if (coll == 'contentItems') {
-        await _deleteContent(tx, id);
-        continue;
-      }
-      final t = tables[coll];
-      if (t != null) await tx.delete(t.$1, where: '${t.$2} = ?', whereArgs: [id]);
-    }
-  });
-  await rt.setMeta('last_sync_tombstones', _iso(page.docs.last.data()['removedAt']));
-  return page.docs.length;
+    });
+    count += page.docs.length;
+    last = page.docs.last;
+    await rt.setMeta('last_sync_tombstones', _iso(page.docs.last.data()['removedAt']));
+    if (page.docs.length < _pageSize) break;
+  }
+  return count;
 }
 
 /// Le chiavi esterne di SQLite non sono attive su questa connessione:

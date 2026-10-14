@@ -8,6 +8,7 @@ Questa cartella contiene il livello di sicurezza Firestore di Niyah:
 | `firestore.indexes.json` | indici composti per la sync incrementale |
 | `firebase.json`, `.firebaserc` | configurazione CLI ed emulatore; alias `dev`, `staging`, `prod` |
 | `test/rules.test.js` | test delle regole contro l'emulatore Firestore |
+| `functions/` | Cloud Functions (TypeScript): versione dei contenuti, tombstone, verifica, ruoli admin |
 
 ## Cosa garantiscono le regole
 
@@ -33,9 +34,10 @@ Le Cloud Functions e la console usano l'Admin SDK, che **ignora le regole**.
 
 Note per chi scrive i dati:
 
-- `updatedAt` va scritto come timestamp, possibilmente del server (`FieldValue.serverTimestamp()` o dalla Cloud Function `onContentWrite`): un orologio client sbagliato farebbe sfuggire il documento alla sync incrementale.
+- `updatedAt` va scritto come timestamp, possibilmente del server (`FieldValue.serverTimestamp()`): un orologio client sbagliato farebbe sfuggire il documento alla sync incrementale.
 - Le regole lavorano per documento: di un contenuto pubblicato si leggono **tutti** i campi, quindi `verifiedBy` è pubblico. Usare un identificativo che il revisore accetta di rendere visibile.
-- Quando un contenuto viene archiviato, le sue traduzioni pubblicate restano leggibili: la Cloud Function dovrebbe archiviarle insieme al padre (o il client ignora le traduzioni orfane).
+- Quando un contenuto viene archiviato, la Cloud Function `onContentItemWrite` archivia anche le sue traduzioni pubblicate.
+- Il client legge la traduzione di un contenuto con una query `where('status','==','published')` sulla sottocollezione, non con un get: le regole negano il get di una traduzione in bozza o inesistente (anche una query filtrata per `documentId`).
 
 ## Indici
 
@@ -69,3 +71,48 @@ npm test
 `npm test` esegue `firebase emulators:exec --only firestore --project demo-niyah "mocha test"`: avvia l'emulatore, esegue i test e lo chiude. Il progetto `demo-niyah` è fittizio: non serve login né un progetto reale.
 
 Se si aggiunge un campo a una collezione, va aggiunto anche all'elenco dei campi ammessi in `firestore.rules`, altrimenti le scritture vengono rifiutate.
+
+## Cloud Functions (`functions/`)
+
+Cosa fanno: vedi [architettura §4.4](../docs/architettura.md). In breve:
+
+- ogni scrittura su un documento **che i client vedono o vedevano** (`contentItems` pubblicati; `categories`, `topics`, `topicContent`, `notificationTemplates`, `islamicEvents` attivi) incrementa `meta/contentVersion.version.{it,en,ar,fr}`; le bozze non costano nulla ai client;
+- un documento ritirato, disattivato o cancellato produce una `tombstones/{autoId}` `{collection, docId, removedAt}` (+ `topicId`, `contentId` per `topicContent`);
+- un contenuto `verified`/`published` senza `verifiedBy` e `verifiedAt` (scritto dalla console o dall'Admin SDK, che ignorano le regole) torna in `review`, con una voce in `adminAudit`;
+- archiviare o cancellare un contenuto archivia le sue traduzioni pubblicate/verificate; cambiare una traduzione di un contenuto pubblicato aggiorna `updatedAt` del contenuto;
+- `setAdminRole({uid, role})`, chiamabile solo da un `superAdmin`: imposta il custom claim `role` (o lo toglie con `role: null`), aggiorna `adminRoles/{uid}`, scrive `adminAudit` e revoca le sessioni quando un ruolo esistente viene tolto o cambiato.
+
+### Primo superAdmin
+
+Una volta per ambiente, dal proprio computer (l'utente deve già esistere in Authentication):
+
+```bash
+cd functions && npm install
+gcloud auth application-default login
+node scripts/first-superadmin.js --project niyah-dev --email tua@email
+```
+
+Lo script si rifiuta se esiste già un superAdmin. Il ruolo vale dal successivo accesso al pannello.
+
+### Deploy
+
+Le Cloud Functions richiedono il piano **Blaze** sul progetto.
+
+```bash
+cd functions && npm install
+npx firebase deploy --only functions -P dev
+```
+
+⚠️ La regione è `europe-west1` (in `src/index.ts`): deve essere compatibile con la posizione del database Firestore scelta alla creazione del progetto. Se il database è altrove (es. `nam5`), cambiare la regione prima del deploy.
+
+### Test
+
+```bash
+cd functions && npm install
+npm test   # test della logica + test con gli emulatori Firestore, Functions e Auth
+```
+
+Limiti noti:
+
+- un ruolo tolto smette di valere subito per le nuove sessioni, ma un ID token già emesso resta valido fino alla sua scadenza (al massimo 1 ora): le regole non possono controllare la revoca;
+- `firebase-tools` ignora `NO_PROXY`: dietro un proxy HTTP le chiamate tra emulatori passano dal proxy e la registrazione dei trigger fallisce. In CI (nessun proxy) i test girano normalmente.

@@ -3,6 +3,7 @@
 //
 // Nota: i testi arabi/tradotti qui sotto sono SEGNAPOSTO, non citazioni reali.
 
+const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
 const {
@@ -23,6 +24,7 @@ const {
   orderBy,
   limit,
   getDocs,
+  documentId,
   serverTimestamp,
   Timestamp,
   setLogLevel,
@@ -220,6 +222,23 @@ describe('Contenuti pubblici: lettura', () => {
     await assertFails(getDocs(query(collection(db, 'contentItems/pub1/translations'))));
     await assertSucceeds(
       getDocs(query(collection(db, 'contentItems/pub1/translations'), where('status', '==', 'published'))),
+    );
+  });
+
+  it('la sync legge le traduzioni con una query: un get su una lingua mancante o in bozza è negato', async () => {
+    // Stessa query di sync_niyah_content.dart. Un get diretto (o una query
+    // filtrata per documentId) su una traduzione in bozza o inesistente viene
+    // negato e farebbe fallire tutta la sincronizzazione.
+    const db = anon();
+    const published = await assertSucceeds(
+      getDocs(query(collection(db, 'contentItems/pub1/translations'), where('status', '==', 'published'))),
+    );
+    assert.deepEqual(published.docs.map((d) => d.id), ['it']);
+    await assertFails(getDoc(doc(db, 'contentItems/pub1/translations/ar')));
+    await assertFails(
+      getDocs(
+        query(collection(db, 'contentItems/pub1/translations'), where('status', '==', 'published'), where(documentId(), '==', 'fr')),
+      ),
     );
   });
 
