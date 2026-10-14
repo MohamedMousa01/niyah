@@ -1,5 +1,7 @@
 # Niyah — Piano di costruzione in FlutterFlow
 
+> ⚠️ **Superato (14 ottobre 2026).** L'app ora si scrive in Flutter nel repository (`app/`), non più in FlutterFlow. Questo piano resta solo come riferimento storico.
+
 Da seguire in ordine. Ogni fase finisce con un **controllo**: non si passa alla successiva finché non è superato. Riferimenti tra parentesi a [architettura.md](architettura.md).
 
 ---

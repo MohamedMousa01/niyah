@@ -1,0 +1,153 @@
+{
+  "@@locale": "it",
+  "appTitle": "Niyah",
+  "tagline": "Rinnova la tua intenzione.",
+  "navHome": "Home",
+  "navNotifications": "Le mie notifiche",
+  "navStoPer": "Sto per…",
+  "navSettings": "Impostazioni",
+  "homeNotificationsBody": "Scegli quando ricordare la tua intenzione.",
+  "homeStoPerBody": "Prima di un'azione, rinnova l'intenzione.",
+  "homeSettingsBody": "Lingua, Non disturbare, pausa.",
+  "next": "Avanti",
+  "back": "Indietro",
+  "start": "Inizia",
+  "notNow": "Non ora",
+  "save": "Salva",
+  "cancel": "Annulla",
+  "onboardingWelcomeTitle": "Benvenuto in Niyah",
+  "onboardingWelcomeBody": "Piccoli promemoria per rinnovare l'intenzione durante la giornata. Funziona anche offline, senza pubblicità e senza tracciamento.",
+  "onboardingLanguageTitle": "Scegli la lingua",
+  "onboardingNotificationsTitle": "Notifiche",
+  "onboardingNotificationsBody": "Niyah ti invia solo i promemoria che scegli tu, negli orari che decidi. Puoi cambiarli o metterli in pausa quando vuoi.",
+  "allowNotifications": "Consenti le notifiche",
+  "sectionSuggested": "Suggeriti da Niyah",
+  "sectionContent": "Contenuti islamici",
+  "sectionWeekly": "Settimanali e stagionali",
+  "contentComingSoon": "Versetti e hadith arrivano solo dopo la verifica delle fonti. Questa sezione si attiverà quando saranno disponibili.",
+  "notificationsOff": "Le notifiche di Niyah sono disattivate su questo telefono.",
+  "openSettings": "Apri impostazioni",
+  "everyDayAt": "Ogni giorno alle {time}",
+  "@everyDayAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "daysAt": "{days} alle {time}",
+  "@daysAt": {
+    "placeholders": {
+      "days": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "betweenTimes": "Tra le {start} e le {end}",
+  "@betweenTimes": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "pauseCustom": "Fino a…",
+  "time": "Orario",
+  "days": "Giorni",
+  "reminderOn": "Attivo",
+  "reminderOff": "Disattivato",
+  "mutedByQuietHours": "Questo orario cade nella fascia Non disturbare: la notifica non arriverà.",
+  "errorDaysRequired": "Scegli almeno un giorno.",
+  "stoPerEmpty": "I contenuti per questo momento arriveranno dopo la verifica delle fonti.",
+  "settingsLanguage": "Lingua",
+  "settingsQuietHours": "Non disturbare",
+  "quietHoursOff": "Disattivato",
+  "quietHoursRange": "Dalle {start} alle {end}",
+  "@quietHoursRange": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "quietHoursFrom": "Dalle",
+  "quietHoursTo": "Alle",
+  "quietModeSkip": "Salta le notifiche nella fascia",
+  "quietModeShift": "Spostale alla fine della fascia",
+  "settingsPause": "Pausa",
+  "pauseNone": "Notifiche attive",
+  "pausedUntil": "In pausa fino a {when}",
+  "@pausedUntil": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "pause1h": "Per 1 ora",
+  "pauseToday": "Fino a stasera",
+  "pauseTomorrow": "Fino a domani mattina",
+  "resume": "Riprendi le notifiche",
+  "settingsPermission": "Permesso notifiche",
+  "permissionGranted": "Consentite",
+  "permissionDenied": "Non consentite",
+  "settingsAbout": "Informazioni",
+  "aboutBody": "Niyah è gratuita, senza pubblicità e senza tracciamento. I contenuti islamici vengono pubblicati solo dopo la verifica delle fonti.",
+  "aboutVersion": "Versione {version}",
+  "@aboutVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "aboutLicenses": "Licenze",
+  "genericError": "Qualcosa non ha funzionato. Riprova.",
+  "prayerFajr": "Fajr",
+  "prayerDhuhr": "Dhuhr",
+  "prayerAsr": "Asr",
+  "prayerMaghrib": "Maghrib",
+  "prayerIsha": "Isha",
+  "notifPrayerAtTime": "È l'ora di {prayer}",
+  "@notifPrayerAtTime": {
+    "placeholders": {
+      "prayer": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPrayerBefore": "{prayer} tra {minutes} minuti",
+  "@notifPrayerBefore": {
+    "placeholders": {
+      "prayer": {
+        "type": "String"
+      },
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "notifQuranTitle": "Corano",
+  "notifHadithTitle": "Hadith",
+  "notifDhikrTitle": "Dhikr",
+  "notifTapToRead": "Tocca per leggere",
+  "notifRefreshBody": "Apri Niyah per continuare a ricevere i promemoria.",
+  "notifPrivateBody": "Ricorda la tua intenzione",
+  "channelPrayer": "Preghiera",
+  "channelNiyyah": "Niyyah",
+  "channelQuran": "Corano",
+  "channelHadith": "Hadith",
+  "channelDhikr": "Dhikr",
+  "channelGoodDeeds": "Buone azioni",
+  "channelIslamicEvents": "Eventi islamici",
+  "channelPersonal": "Promemoria personali"
+}
