@@ -1,5 +1,7 @@
 # Niyah — custom code per FlutterFlow
 
+> ⚠️ **Superato (14 ottobre 2026).** L'app ora si scrive in Flutter nel repository (`app/`), non più in FlutterFlow. Questi file restano come riferimento finché la sincronizzazione dei contenuti non viene portata in `app/`.
+
 Questa cartella contiene il codice da incollare in FlutterFlow (Custom Code → Actions). La logica vera sta in un solo file, `niyah_core.dart`, che è testato fuori da FlutterFlow (`packages/niyah_core`, 43 test). Le altre azioni sono involucri sottili che collegano quella logica al plugin delle notifiche, a SQLite e a Firestore.
 
 Legenda: ⚠️ = da verificare nella tua versione di FlutterFlow prima di andare avanti.

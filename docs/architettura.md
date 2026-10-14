@@ -2,6 +2,8 @@
 
 Versione 0.3 · 14 ottobre 2026 · Documento di riferimento per tutte le fasi successive.
 
+> Dal 14 ottobre 2026 l'app si scrive in **Flutter** nel repository (`app/`) invece che in FlutterFlow. Le scelte qui sotto restano valide; dove si parla di "custom action" o di editor FlutterFlow, oggi si tratta di normali servizi Dart in `app/lib/`.
+
 Priorità che guidano ogni scelta (dal master prompt, §66): **affidabilità → offline → notifiche corrette → integrità dei contenuti islamici → privacy/sicurezza → prestazioni → semplicità → scalabilità → estetica.**
 
 Legenda: ✅ = deciso · ⚠️ = da verificare nel tuo piano/versione FlutterFlow prima di costruire · 🔒 = requisito di privacy
@@ -11,7 +13,7 @@ Legenda: ✅ = deciso · ⚠️ = da verificare nel tuo piano/versione FlutterFl
 ## 1. Visione d'insieme
 
 ```
-┌──────────────────────────── App mobile (FlutterFlow) ────────────────────────────┐
+┌────────────────────────────── App mobile (Flutter) ──────────────────────────────┐
 │  UI (4 tab)  ──►  App State persistente (impostazioni piccole)                   │
 │      │                                                                           │
 │      ▼                                                                           │
@@ -28,7 +30,7 @@ Legenda: ✅ = deciso · ⚠️ = da verificare nel tuo piano/versione FlutterFl
 └──────────────────────────────────────┬───────────────────────────────────────────┘
                                        │
 ┌──────────────────────────────────────▼───────────────────────────────────────────┐
-│  Pannello Admin (progetto FlutterFlow web separato, stesso backend Firebase)     │
+│  Pannello Admin (app web separata, stesso backend Firebase)                      │
 └──────────────────────────────────────────────────────────────────────────────────┘
 ```
 

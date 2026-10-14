@@ -2,13 +2,14 @@
 
 App islamica gratuita per ricordare Allah e rinnovare la propria intenzione (niyyah) durante la giornata. Offline-first, senza pubblicità, senza gamification, senza contenuti religiosi generati automaticamente.
 
-L'interfaccia si costruisce in **FlutterFlow**. Questo repository contiene ciò che FlutterFlow non sa fare da solo, scritto e testato fuori dall'editor.
+L'app è scritta in **Flutter** in questo repository (dal 14 ottobre 2026; prima il piano era FlutterFlow).
 
 | Cartella | Contenuto | Test |
 |---|---|---|
-| [`docs/`](docs/) | architettura e piano di costruzione in FlutterFlow | — |
+| [`app/`](app/) | l'app Flutter (Android e iOS): schermate, database locale, notifiche. L'APK di prova si scarica dalla CI | `flutter test` |
+| [`docs/`](docs/) | architettura | — |
 | [`packages/niyah_core/`](packages/niyah_core/) | logica pura in Dart: motore delle notifiche "ibrido a budget", orari di preghiera offline, selezione dei contenuti senza ripetizioni, unione per la sincronizzazione, query SQLite | `dart test` |
-| [`flutterflow/custom_actions/`](flutterflow/) | custom action da incollare in FlutterFlow, con la guida di collegamento | `flutter analyze` |
+| [`flutterflow/custom_actions/`](flutterflow/) | ⚠️ superato: custom action del vecchio piano FlutterFlow, da cui vengono i servizi di `app/`. La sincronizzazione dei contenuti (`sync_niyah_content.dart`) verrà portata in `app/` | — |
 | [`seed/`](seed/) | schema del database locale e script che costruisce il database incluso nell'app | `python3 -m unittest` |
 | [`firebase/`](firebase/) | regole di sicurezza Firestore, indici e test con l'emulatore | `npm test` |
 | [`firebase/functions/`](firebase/functions/) | Cloud Functions: versione dei contenuti, tombstone, verifica, ruoli admin | `npm test` |
