@@ -1,0 +1,23 @@
+# Dart / Flutter
+.dart_tool/
+.packages
+build/
+pubspec_overrides.yaml
+
+# Seed
+seed/build/
+seed/**/__pycache__/
+*.zip
+
+# Firebase
+firebase/node_modules/
+firebase/.firebase/
+firebase/*.log
+firebase/firebase-debug.log*
+firebase/firestore-debug.log*
+
+# OS
+.DS_Store
+
+# Lock file dei pacchetti Dart (libreria, non app)
+packages/**/pubspec.lock

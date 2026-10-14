@@ -1,0 +1,15 @@
+{
+  "_note": "Argomenti di \"Sto per…\". Solo nomi: i contenuti collegati (versetti e hadith verificati) arrivano dal pannello admin tramite topic_content.",
+  "topics": [
+    {"id": "eat", "icon": "restaurant", "names": {"it": "Mangiare", "en": "Eating", "fr": "Manger", "ar": "الأكل"}},
+    {"id": "work", "icon": "work", "names": {"it": "Lavorare", "en": "Working", "fr": "Travailler", "ar": "العمل"}},
+    {"id": "study", "icon": "book", "names": {"it": "Studiare", "en": "Studying", "fr": "Étudier", "ar": "الدراسة"}},
+    {"id": "pray", "icon": "prayer", "names": {"it": "Pregare", "en": "Praying", "fr": "Prier", "ar": "الصلاة"}},
+    {"id": "sleep", "icon": "bedtime", "names": {"it": "Dormire", "en": "Sleeping", "fr": "Dormir", "ar": "النوم"}},
+    {"id": "travel", "icon": "flight", "names": {"it": "Viaggiare", "en": "Travelling", "fr": "Voyager", "ar": "السفر"}},
+    {"id": "family", "icon": "family", "names": {"it": "Famiglia", "en": "Family", "fr": "Famille", "ar": "العائلة"}},
+    {"id": "sport", "icon": "sport", "names": {"it": "Sport", "en": "Sport", "fr": "Sport", "ar": "الرياضة"}},
+    {"id": "shopping", "icon": "shopping", "names": {"it": "Fare acquisti", "en": "Shopping", "fr": "Faire des achats", "ar": "التسوق"}},
+    {"id": "socialize", "icon": "groups", "names": {"it": "Socializzare", "en": "Socialising", "fr": "Voir des gens", "ar": "لقاء الناس"}}
+  ]
+}

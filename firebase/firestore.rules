@@ -1,0 +1,327 @@
+rules_version = '2';
+
+// =============================================================================
+// Niyah — regole di sicurezza Firestore (produzione)
+//
+// Principi:
+//   * Default deny: ogni percorso non elencato qui sotto è negato.
+//   * Il pubblico (qualsiasi richiesta; App Check è imposto fuori dalle regole)
+//     legge SOLO contenuti pubblicati/attivi.
+//   * I ruoli arrivano esclusivamente dai custom claims (request.auth.token.role),
+//     impostati dalla Cloud Function setAdminRole. adminRoles/{uid} è solo una copia.
+//   * I dati utente sono accessibili SOLO al proprietario: nessun ruolo admin vi accede.
+//   * I contenuti pubblici non si cancellano mai dal client (§8.1): si cambia
+//     status/active e la Cloud Function scrive un tombstone.
+// =============================================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------------------------------------------------------------- ruoli
+    function signedIn() { return request.auth != null; }
+    function role() { return signedIn() ? request.auth.token.get('role', '') : ''; }
+    function hasRole(roles) { return role() in roles; }
+
+    function isSuperAdmin()        { return hasRole(['superAdmin']); }
+    function isContentAdmin()      { return hasRole(['superAdmin', 'contentAdmin']); }
+    function isNotificationAdmin() { return hasRole(['superAdmin', 'notificationAdmin']); }
+    function isTranslator()        { return hasRole(['translator']); }
+    // Chi può vedere contenuti e traduzioni non ancora pubblicati.
+    function isContentStaff()      { return hasRole(['superAdmin', 'contentAdmin', 'translator']); }
+
+    function isOwner(uid) { return signedIn() && request.auth.uid == uid; }
+
+    // ---------------------------------------------------------- validazione
+    function contentStatuses() { return ['draft', 'review', 'verified', 'published', 'archived']; }
+
+    function isNonEmptyString(v) { return v is string && v.size() > 0; }
+
+    // Campi facoltativi: assenti, null oppure del tipo indicato.
+    function optString(d, k)    { return !(k in d) || d[k] == null || d[k] is string; }
+    function optBool(d, k)      { return !(k in d) || d[k] == null || d[k] is bool; }
+    function optInt(d, k)       { return !(k in d) || d[k] == null || d[k] is int; }
+    function optMap(d, k)       { return !(k in d) || d[k] == null || d[k] is map; }
+    function optList(d, k)      { return !(k in d) || d[k] == null || d[k] is list; }
+    function optTimestamp(d, k) { return !(k in d) || d[k] == null || d[k] is timestamp; }
+    function optDate(d, k)      { return !(k in d) || d[k] == null || d[k] is timestamp || d[k] is string; }
+
+    // updatedAt è obbligatorio: senza, il documento sfuggirebbe alle query di
+    // sync incrementale (where updatedAt > lastSync).
+    function hasUpdatedAt(d) { return d.get('updatedAt', null) is timestamp; }
+
+    function hasVerification(d) {
+      return isNonEmptyString(d.get('verifiedBy', null))
+          && d.get('verifiedAt', null) is timestamp;
+    }
+
+    // ------------------------------------------------------ contentItems
+    function validQuran(d) {
+      let surah = d.get('surah', null);
+      let ayahFrom = d.get('ayahFrom', null);
+      let ayahTo = d.get('ayahTo', null);
+      return surah is int && surah >= 1 && surah <= 114
+          && ayahFrom is int && ayahFrom >= 1 && ayahFrom <= 286
+          && isNonEmptyString(d.get('arabicText', null))
+          && (ayahTo == null || (ayahTo is int && ayahTo >= ayahFrom && ayahTo <= 286));
+    }
+
+    function validHadith(d) {
+      let num = d.get('hadithNumber', null);
+      return isNonEmptyString(d.get('collection', null))
+          && isNonEmptyString(d.get('sourceRef', null))
+          && isNonEmptyString(d.get('grade', null))
+          && (num == null || num is string || num is int)
+          // §13: un hadith verificato/pubblicato deve avere anche il numero.
+          && (!(d.status in ['verified', 'published']) || num != null);
+    }
+
+    function validContentItem(d) {
+      return d.keys().hasOnly(['type', 'arabicText', 'surah', 'ayahFrom', 'ayahTo',
+                               'collection', 'hadithNumber', 'grade', 'sourceRef',
+                               'status', 'verifiedBy', 'verifiedAt', 'categoryIds',
+                               'createdAt', 'updatedAt'])
+          && d.get('type', null) in ['quran', 'hadith', 'dhikr']
+          && d.get('status', null) in contentStatuses()
+          && hasUpdatedAt(d)
+          && optString(d, 'arabicText') && optString(d, 'verifiedBy')
+          && optTimestamp(d, 'verifiedAt') && optTimestamp(d, 'createdAt')
+          && optList(d, 'categoryIds')
+          && (d.type != 'quran'  || validQuran(d))
+          && (d.type != 'hadith' || validHadith(d))
+          // Nessuno porta un contenuto a verified/published senza chi e quando.
+          && (!(d.status in ['verified', 'published']) || hasVerification(d));
+    }
+
+    // ------------------------------------------------------ translations
+    function contentItemPath(itemId) {
+      return /databases/$(database)/documents/contentItems/$(itemId);
+    }
+
+    function validTranslation(d, itemId, lang) {
+      return lang.matches('^[a-z]{2,3}(-[A-Za-z0-9]{2,8})?$')
+          && d.keys().hasOnly(['text', 'referenceLabel', 'translator', 'translationSource', 'status',
+                               'verifiedBy', 'verifiedAt', 'createdAt', 'updatedAt'])
+          && isNonEmptyString(d.get('text', null))
+          && d.get('status', null) in contentStatuses()
+          && hasUpdatedAt(d)
+          && optString(d, 'translator') && optString(d, 'translationSource')
+          && optString(d, 'referenceLabel')
+          && optString(d, 'verifiedBy') && optTimestamp(d, 'verifiedAt')
+          && optTimestamp(d, 'createdAt')
+          && exists(contentItemPath(itemId))
+          // Una traduzione pubblicata cita il traduttore (licenze/attribuzione)
+          // e appartiene a un contenuto già verificato o pubblicato.
+          // L'app mostra sempre riferimento e fonte della traduzione.
+          && (d.status != 'published'
+              || (isNonEmptyString(d.get('translator', null))
+                  && isNonEmptyString(d.get('referenceLabel', null))
+                  && isNonEmptyString(d.get('translationSource', null))
+                  && get(contentItemPath(itemId)).data.status in ['verified', 'published']));
+    }
+
+    function translatorStatuses() { return ['draft', 'review']; }
+    // Campi della revisione che il traduttore non può impostare né modificare.
+    function reviewFields() { return ['verifiedBy', 'verifiedAt']; }
+
+    // --------------------------------------- collezioni con flag "active"
+    function validCategory(d) {
+      return d.keys().hasOnly(['parentId', 'icon', 'order', 'active', 'names',
+                               'createdAt', 'updatedAt'])
+          && d.get('active', null) is bool
+          && d.get('names', null) is map
+          && hasUpdatedAt(d)
+          && optString(d, 'parentId') && optString(d, 'icon') && optInt(d, 'order')
+          && optTimestamp(d, 'createdAt');
+    }
+
+    function validTopic(d) {
+      return d.keys().hasOnly(['icon', 'order', 'active', 'names', 'createdAt', 'updatedAt'])
+          && d.get('active', null) is bool
+          && d.get('names', null) is map
+          && hasUpdatedAt(d)
+          && optString(d, 'icon') && optInt(d, 'order') && optTimestamp(d, 'createdAt');
+    }
+
+    function validTopicContent(d, docId) {
+      return d.keys().hasOnly(['topicId', 'contentId', 'order', 'active', 'createdAt', 'updatedAt'])
+          && isNonEmptyString(d.get('topicId', null))
+          && isNonEmptyString(d.get('contentId', null))
+          && docId == d.topicId + '_' + d.contentId
+          && d.get('active', null) is bool
+          && hasUpdatedAt(d)
+          && optInt(d, 'order') && optTimestamp(d, 'createdAt');
+    }
+
+    function validNotificationTemplate(d) {
+      return d.keys().hasOnly(['categoryId', 'contentType', 'defaultSchedule', 'editableByUser',
+                               'seasonal', 'active', 'i18n', 'section', 'channel',
+                               'sourceContentId', 'createdAt', 'updatedAt'])
+          && d.get('active', null) is bool
+          && d.get('i18n', null) is map
+          && hasUpdatedAt(d)
+          && optString(d, 'categoryId') && optString(d, 'contentType')
+          && optMap(d, 'defaultSchedule') && optBool(d, 'editableByUser')
+          && optBool(d, 'seasonal') && optTimestamp(d, 'createdAt')
+          && optString(d, 'section') && optString(d, 'channel') && optString(d, 'sourceContentId');
+    }
+
+    function validIslamicEvent(d) {
+      return d.keys().hasOnly(['type', 'startDate', 'endDate', 'hijri', 'active', 'contentRefs',
+                               'notificationTemplateRefs', 'languages', 'i18n',
+                               'createdAt', 'updatedAt'])
+          && d.get('active', null) is bool
+          && hasUpdatedAt(d)
+          && optString(d, 'type') && optDate(d, 'startDate') && optDate(d, 'endDate')
+          && optMap(d, 'hijri') && optList(d, 'contentRefs')
+          && optList(d, 'notificationTemplateRefs') && optList(d, 'languages')
+          && optMap(d, 'i18n') && optTimestamp(d, 'createdAt');
+    }
+
+    function validCampaign(d) {
+      let startAt = d.get('startAt', null);
+      let endAt = d.get('endAt', null);
+      return d.keys().hasOnly(['name', 'description', 'startAt', 'endAt', 'active',
+                               'targetLanguages', 'targetCategories',
+                               'notificationTemplateRefs', 'fcmTopics',
+                               'createdAt', 'updatedAt'])
+          && isNonEmptyString(d.get('name', null))
+          && d.get('active', null) is bool
+          && hasUpdatedAt(d)
+          && optString(d, 'description')
+          && optTimestamp(d, 'startAt') && optTimestamp(d, 'endAt')
+          && (startAt == null || endAt == null || endAt > startAt)
+          && optList(d, 'targetLanguages') && optList(d, 'targetCategories')
+          && optList(d, 'notificationTemplateRefs') && optList(d, 'fcmTopics')
+          && optTimestamp(d, 'createdAt');
+    }
+
+    // ------------------------------------------------------ promemoria
+    // §7: i promemoria "struggle" non devono MAI arrivare sul backend (v1).
+    // Lista chiusa dei tipi ammessi: rifiuta 'struggle', varianti ('Struggle')
+    // e kind mancante; rifiuta anche ciò che è marcato local_only.
+    function validReminder(d) {
+      return d.get('kind', null) in ['template', 'personal', 'content', 'prayer', 'event']
+          && d.get('syncPolicy', 'cloud') != 'local_only'
+          && d.get('sync_policy', 'cloud') != 'local_only';
+    }
+
+    // =========================================================== contenuti
+    match /contentItems/{itemId} {
+      allow get, list: if isContentStaff() || resource.data.status == 'published';
+      allow create, update: if isContentAdmin() && validContentItem(request.resource.data);
+      allow delete: if false;   // si archivia (status = 'archived'), non si cancella
+
+      match /translations/{lang} {
+        // Le letture sono gestite dalla regola collection-group più sotto.
+        allow create: if validTranslation(request.resource.data, itemId, lang)
+                      && (isContentAdmin()
+                          || (isTranslator()
+                              && request.resource.data.status in translatorStatuses()
+                              && !request.resource.data.keys().hasAny(reviewFields())));
+        // Il traduttore modifica solo bozze/revisioni e non le porta oltre 'review':
+        // non può né pubblicare, né verificare, né ritirare una traduzione pubblicata.
+        allow update: if validTranslation(request.resource.data, itemId, lang)
+                      && (isContentAdmin()
+                          || (isTranslator()
+                              && resource.data.status in translatorStatuses()
+                              && request.resource.data.status in translatorStatuses()
+                              && !request.resource.data.diff(resource.data).affectedKeys()
+                                    .hasAny(reviewFields())));
+        allow delete: if false;
+      }
+    }
+
+    // Lettura delle traduzioni, sia per get diretto sia per la query
+    // collection-group usata dalla sync (where status == 'published').
+    // Nessun altro percorso scrivibile dai client può contenere una
+    // sottocollezione 'translations' (vedi users/{uid} più sotto).
+    match /{path=**}/translations/{lang} {
+      allow get, list: if isContentStaff() || resource.data.status == 'published';
+    }
+
+    match /categories/{id} {
+      allow get, list: if isContentAdmin() || resource.data.active == true;
+      allow create, update: if isContentAdmin() && validCategory(request.resource.data);
+      allow delete: if false;
+    }
+
+    match /topics/{id} {
+      allow get, list: if isContentAdmin() || resource.data.active == true;
+      allow create, update: if isContentAdmin() && validTopic(request.resource.data);
+      allow delete: if false;
+    }
+
+    match /topicContent/{id} {
+      allow get, list: if isContentAdmin() || resource.data.active == true;
+      allow create, update: if isContentAdmin() && validTopicContent(request.resource.data, id);
+      allow delete: if false;
+    }
+
+    match /islamicEvents/{id} {
+      allow get, list: if isContentAdmin() || resource.data.active == true;
+      allow create, update: if isContentAdmin() && validIslamicEvent(request.resource.data);
+      allow delete: if false;
+    }
+
+    match /notificationTemplates/{id} {
+      allow get, list: if isNotificationAdmin() || resource.data.active == true;
+      allow create, update: if isNotificationAdmin() && validNotificationTemplate(request.resource.data);
+      allow delete: if false;
+    }
+
+    match /campaigns/{id} {
+      allow get, list: if isNotificationAdmin() || resource.data.active == true;
+      allow create, update: if isNotificationAdmin() && validCampaign(request.resource.data);
+      allow delete: if false;
+    }
+
+    // meta/contentVersion: 1 lettura all'avvio. Scritto solo da Cloud Functions.
+    match /meta/{docId} {
+      allow get, list: if true;
+      allow write: if false;
+    }
+
+    // tombstones/{autoId} {collection, docId, removedAt}: scritti solo da Cloud
+    // Functions quando un documento viene ritirato/disattivato, così la sync
+    // del client (che non vede i documenti nascosti) può rimuoverlo in locale.
+    match /tombstones/{id} {
+      allow get, list: if true;
+      allow write: if false;
+    }
+
+    // ========================================================= dati utente
+    // Solo il proprietario. Nessun ruolo admin ha accesso.
+    match /users/{uid} {
+      allow get, list, delete: if isOwner(uid);
+      allow create, update: if isOwner(uid);
+
+      match /reminders/{reminderId} {
+        allow get, list, delete: if isOwner(uid);
+        allow create, update: if isOwner(uid) && validReminder(request.resource.data);
+      }
+
+      // Sottocollezioni dirette (preferences/main, location/main, ...).
+      // 'reminders' ha la sua regola (validata) qui sopra; 'translations' è
+      // riservato alla regola collection-group pubblica. Annidamenti più
+      // profondi non sono previsti e restano negati.
+      match /{sub}/{docId} {
+        allow get, list, delete: if isOwner(uid);
+        allow create, update: if isOwner(uid) && !(sub in ['reminders', 'translations']);
+      }
+    }
+
+    // ===================================================== amministrazione
+    match /adminRoles/{uid} {
+      allow get: if isOwner(uid) || isSuperAdmin();
+      allow list: if isSuperAdmin();
+      allow write: if false;   // solo Cloud Function setAdminRole (Admin SDK)
+    }
+
+    match /adminAudit/{id} {
+      allow get, list: if isSuperAdmin();
+      allow write: if false;   // solo Cloud Functions
+    }
+
+    // Qualsiasi altro percorso: nessuna regola = negato.
+  }
+}
