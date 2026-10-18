@@ -13,7 +13,7 @@ const kSupportedLanguages = ['it', 'en', 'fr', 'ar'];
 const kLanguageNames = {'it': 'Italiano', 'en': 'English', 'fr': 'Français', 'ar': 'العربية'};
 
 class AppSettings extends ChangeNotifier {
-  AppSettings(this._prefs, {String? deviceLanguage}) {
+  AppSettings(this._prefs, {String? deviceLanguage, DateTime Function()? clock}) : _clock = clock ?? DateTime.now {
     final saved = _prefs.getString(_kLanguage);
     _language = kSupportedLanguages.contains(saved)
         ? saved!
@@ -31,6 +31,7 @@ class AppSettings extends ChangeNotifier {
   static const _kDeviceId = 'device_id';
 
   final SharedPreferences _prefs;
+  final DateTime Function() _clock;
 
   late String _language;
   late bool _onboardingCompleted;
@@ -45,7 +46,7 @@ class AppSettings extends ChangeNotifier {
   /// Istante UTC fino a cui tutte le notifiche sono in pausa (null = attive).
   DateTime? get pausedUntil {
     final p = _pausedUntil;
-    return p != null && p.isAfter(DateTime.now().toUtc()) ? p : null;
+    return p != null && p.isAfter(_clock().toUtc()) ? p : null;
   }
 
   /// Identificativo anonimo di questo dispositivo, solo per risolvere i

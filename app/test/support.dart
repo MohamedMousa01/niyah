@@ -143,7 +143,7 @@ Future<AppController> makeController({
   NiyahDatabase? database,
 }) async {
   SharedPreferences.setMockInitialValues(prefs);
-  final settings = AppSettings(await SharedPreferences.getInstance());
+  final settings = AppSettings(await SharedPreferences.getInstance(), clock: now == null ? null : () => now);
   return AppController(
     settings: settings,
     database: database ?? await openTestDatabase(),
