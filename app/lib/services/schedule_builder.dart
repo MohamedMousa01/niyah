@@ -5,6 +5,8 @@ import 'package:niyah_core/niyah_core.dart' as core;
 import 'package:sqflite/sqflite.dart';
 import 'package:timezone/timezone.dart' as tz;
 
+import 'random_reminders.dart';
+
 class ScheduleInput {
   const ScheduleInput({
     required this.language,
@@ -14,6 +16,7 @@ class ScheduleInput {
     this.quietHours = const core.QuietHours(),
     this.pausedUntil,
     this.prayer,
+    this.randomTexts = const [],
   });
 
   final String language;
@@ -23,6 +26,9 @@ class ScheduleInput {
   final core.QuietHours quietHours;
   final DateTime? pausedUntil;
   final core.PrayerSettings? prayer;
+
+  /// Testi delle notifiche random (vuoto = notifiche random spente).
+  final List<core.TextPair> randomTexts;
 }
 
 class ScheduleBuilder {
@@ -38,7 +44,8 @@ class ScheduleBuilder {
     tz.TZDateTime now, {
     List<core.ExistingNotification> existing = const [],
   }) async {
-    final reminders = (await db.rawQuery(core.NiyahSql.activeReminders)).map(core.Reminder.fromRow).toList();
+    final reminders = (await db.rawQuery(core.NiyahSql.activeReminders)).map(core.Reminder.fromRow).toList()
+      ..addAll(RandomReminders.forDays(core.LocalDate.of(now), input.randomTexts));
 
     final tpl = await db.rawQuery(core.NiyahSql.templateTexts, [input.language]);
     final templateTexts = {

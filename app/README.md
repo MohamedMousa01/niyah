@@ -42,7 +42,7 @@ Per iOS serve un Mac con Xcode (oppure un servizio di build nel cloud come Codem
 
 ## Cosa c'è e cosa manca
 
-Già pronto: onboarding (benvenuto, lingua, permesso notifiche spiegato prima di chiederlo), Home, "Le mie notifiche" con i modelli suggeriti (attiva/disattiva, orario e giorni), "Sto per…", impostazioni (lingua, Non disturbare, pausa, permesso, informazioni), 4 lingue con l'arabo da destra a sinistra, notifiche locali con ripristino dopo il riavvio del telefono.
+Già pronto: onboarding (benvenuto, lingua, permesso notifiche spiegato prima di chiederlo), barra in basso con due schede: "Le mie notifiche" (notifiche scritte dall'utente con testo, orario e giorni) e "Notifiche standard" (notifiche random con interruttore, modelli suggeriti con orario e giorni); impostazioni in una schermata a parte dall'icona in alto (lingua, Non disturbare, pausa, permesso, informazioni); 6 lingue (italiano, arabo da destra a sinistra, inglese, francese, spagnolo, tedesco); notifiche locali che su Android spariscono da sole dopo 3 ore e si ripristinano dopo il riavvio del telefono. "Sto per…" è nel codice ma non è raggiungibile dalla barra.
 
 Prossimi passi: promemoria personali e "peccato che sto combattendo" (solo locali), orari e avvisi di preghiera con scelta della città, sincronizzazione dei contenuti verificati da Firebase, pagina di dettaglio dei contenuti.
 

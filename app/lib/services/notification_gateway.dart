@@ -10,6 +10,10 @@ import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:niyah_core/niyah_core.dart' as core;
 import 'package:timezone/timezone.dart' as tz;
 
+/// Una notifica non aperta sparisce da sola dopo questo tempo. Solo Android:
+/// iOS non permette a un'app di ritirare da sola una notifica già mostrata.
+const kNotificationLifetime = Duration(hours: 3);
+
 abstract class NotificationGateway {
   bool get isIos;
 
@@ -153,6 +157,7 @@ class LocalNotificationGateway implements NotificationGateway {
         // Su Android il blocco schermo mostra solo "contenuto nascosto".
         visibility: n.isPrivate ? NotificationVisibility.private : NotificationVisibility.public,
         category: isPrayer ? AndroidNotificationCategory.reminder : null,
+        timeoutAfter: kNotificationLifetime.inMilliseconds,
       ),
       iOS: DarwinNotificationDetails(threadIdentifier: n.channel),
     );

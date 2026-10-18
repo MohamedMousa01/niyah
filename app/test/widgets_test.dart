@@ -4,6 +4,7 @@ import 'package:niyah/app.dart';
 import 'package:niyah/state/app_controller.dart';
 import 'package:niyah/ui/home_shell.dart';
 import 'package:niyah/ui/onboarding_page.dart';
+import 'package:niyah/ui/settings_page.dart';
 
 import 'support.dart';
 
@@ -53,28 +54,29 @@ void main() {
     expect(c.settings.onboardingCompleted, isTrue);
   });
 
-  testWidgets('Home: tre accessi, nessun conteggio, porta alle schede', (tester) async {
+  testWidgets('barra in basso: solo le due schede di notifiche, Impostazioni dall\'icona', (tester) async {
     await _pumpApp(tester, prefs: {'onboarding_completed': true});
-    expect(find.text('Rinnova la tua intenzione.'), findsOneWidget);
-    await tester.tap(find.text('Prima di un\'azione, rinnova l\'intenzione.'));
-    await tester.pumpAndSettle();
-    expect(find.text('Mangiare'), findsOneWidget);
+    expect(find.byType(NavigationDestination), findsNWidgets(2));
+    expect(find.widgetWithText(NavigationDestination, 'Le mie notifiche'), findsOneWidget);
+    expect(find.widgetWithText(NavigationDestination, 'Notifiche standard'), findsOneWidget);
+    expect(find.widgetWithText(NavigationDestination, 'Impostazioni'), findsNothing);
 
-    await tester.tap(find.text('Mangiare'));
+    await tester.tap(find.byTooltip('Impostazioni'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('verifica delle fonti'), findsOneWidget);
+    expect(find.byType(SettingsPage), findsOneWidget);
+    expect(find.text('Lingua'), findsOneWidget);
   });
 
   testWidgets('in arabo l\'interfaccia è da destra a sinistra', (tester) async {
     await _pumpApp(tester, prefs: {'onboarding_completed': true, 'language': 'ar'});
     final dir = Directionality.of(tester.element(find.byType(HomeShell)));
     expect(dir, TextDirection.rtl);
-    expect(find.text('جدّد نيّتك.'), findsOneWidget);
+    expect(find.widgetWithText(NavigationDestination, 'إشعاراتي'), findsOneWidget);
   });
 
-  testWidgets('Le mie notifiche: attivare un modello e cambiarne i giorni', (tester) async {
+  testWidgets('Notifiche standard: attivare un modello e cambiarne i giorni', (tester) async {
     final c = await _pumpApp(tester, prefs: {'onboarding_completed': true});
-    await tester.tap(find.text('Le mie notifiche').last);
+    await tester.tap(find.text('Notifiche standard').last);
     await tester.pumpAndSettle();
 
     expect(find.text('Suggeriti da Niyah'), findsOneWidget);
@@ -84,7 +86,8 @@ void main() {
     expect(find.text('Corano'), findsNothing);
     expect(find.textContaining('verifica delle fonti'), findsOneWidget);
 
-    await tester.tap(find.byType(Switch).first);
+    // Il primo interruttore è quello delle notifiche random.
+    await tester.tap(find.byType(Switch).at(1));
     await tester.pumpAndSettle();
     final reminders = await c.reminders.templateReminders();
     expect(reminders['morning']!.enabled, isTrue);
@@ -113,8 +116,6 @@ void main() {
     final c = await _pumpApp(tester, prefs: {'onboarding_completed': true}, gateway: gateway);
     await c.refreshPermission();
     await tester.pump();
-    await tester.tap(find.text('Le mie notifiche').last);
-    await tester.pumpAndSettle();
     expect(find.text('Le notifiche di Niyah sono disattivate su questo telefono.'), findsOneWidget);
     await tester.tap(find.text('Apri impostazioni'));
     expect(gateway.openSettingsCalls, 1);
@@ -122,7 +123,7 @@ void main() {
 
   testWidgets('Impostazioni: lingua e pausa', (tester) async {
     final c = await _pumpApp(tester, prefs: {'onboarding_completed': true});
-    await tester.tap(find.text('Impostazioni').last);
+    await tester.tap(find.byTooltip('Impostazioni'));
     await tester.pumpAndSettle();
     expect(find.text('Notifiche attive'), findsOneWidget);
 
@@ -139,5 +140,58 @@ void main() {
     await tester.pumpAndSettle();
     expect(c.settings.language, 'fr');
     expect(find.text('Langue'), findsOneWidget);
+  });
+
+  testWidgets('Le mie notifiche: crearne una, modificarla ed eliminarla', (tester) async {
+    final c = await _pumpApp(tester, prefs: {'onboarding_completed': true});
+    expect(find.textContaining('Non hai ancora creato notifiche'), findsOneWidget);
+
+    await tester.tap(find.text('Nuova notifica'));
+    await tester.pumpAndSettle();
+    // Senza testo non si salva.
+    await tester.tap(find.text('Salva'));
+    await tester.pumpAndSettle();
+    expect(find.text('Scrivi il testo della notifica.'), findsOneWidget);
+    expect(await c.reminders.personalReminders(), isEmpty);
+
+    await tester.enterText(find.widgetWithText(TextField, 'Testo'), 'Chiama la mamma');
+    await tester.tap(find.text('Salva'));
+    await tester.pumpAndSettle();
+    final saved = await c.reminders.personalReminders();
+    expect(saved, hasLength(1));
+    expect(saved.single.body, 'Chiama la mamma');
+    expect(find.text('Chiama la mamma'), findsOneWidget);
+    expect(find.textContaining('Ogni giorno alle 09:00'), findsOneWidget);
+    expect(c.lastSummary.pending, greaterThan(0));
+
+    await tester.tap(find.text('Chiama la mamma'));
+    await tester.pumpAndSettle();
+    expect(find.text('Modifica notifica'), findsOneWidget);
+    await tester.enterText(find.widgetWithText(TextField, 'Titolo (facoltativo)'), 'Famiglia');
+    await tester.tap(find.text('Salva'));
+    await tester.pumpAndSettle();
+    expect((await c.reminders.personalReminders()).single.title, 'Famiglia');
+    expect(find.text('Famiglia'), findsOneWidget);
+
+    await tester.tap(find.text('Famiglia'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Elimina'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(TextButton, 'Elimina').last);
+    await tester.pumpAndSettle();
+    expect(await c.reminders.personalReminders(), isEmpty);
+    expect(find.textContaining('Non hai ancora creato notifiche'), findsOneWidget);
+  });
+
+  testWidgets('Notifiche standard: interruttore delle notifiche random', (tester) async {
+    final c = await _pumpApp(tester, prefs: {'onboarding_completed': true, 'random_notifications': true});
+    await tester.tap(find.text('Notifiche standard').last);
+    await tester.pumpAndSettle();
+    expect(find.text('Notifiche random'), findsOneWidget);
+    expect(find.textContaining('tra le 09:00 e le 21:00'), findsOneWidget);
+
+    await tester.tap(find.byType(Switch).first);
+    await tester.pumpAndSettle();
+    expect(c.settings.randomEnabled, isFalse);
   });
 }

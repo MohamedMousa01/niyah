@@ -1,10 +1,10 @@
--- Niyah — schema del database locale (SQLite), versione 1.
+-- Niyah — schema del database locale (SQLite), versione 2 (aggiunte spagnolo e tedesco).
 -- Fonte di verità sul dispositivo (architettura §3). Le notifiche dell'OS sono
 -- solo una proiezione della tabella `reminders`: il motore le ricalcola sempre
 -- da qui e le confronta con le notifiche in attesa nell'OS (id stabili), per
 -- questo non serve una tabella di mappatura `scheduled_os`.
 
-PRAGMA user_version = 1;
+PRAGMA user_version = 2;
 
 -- ── Promemoria (tutti i tipi) ───────────────────────────────────────────────
 CREATE TABLE reminders (
@@ -51,7 +51,7 @@ CREATE TABLE categories (
 );
 CREATE TABLE category_i18n (
   category_id TEXT NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
-  lang        TEXT NOT NULL CHECK (lang IN ('it','en','ar','fr')),
+  lang        TEXT NOT NULL CHECK (lang IN ('it','en','ar','fr','es','de')),
   name        TEXT NOT NULL,
   PRIMARY KEY (category_id, lang)
 );
@@ -77,7 +77,7 @@ CREATE TABLE content_items (
 );
 CREATE TABLE content_i18n (
   content_id         TEXT NOT NULL REFERENCES content_items(id) ON DELETE CASCADE,
-  lang               TEXT NOT NULL CHECK (lang IN ('it','en','ar','fr')),
+  lang               TEXT NOT NULL CHECK (lang IN ('it','en','ar','fr','es','de')),
   text               TEXT NOT NULL,
   reference_label    TEXT NOT NULL,   -- es. "Al-Baqarah 2:286", localizzato
   translator         TEXT,
@@ -101,7 +101,7 @@ CREATE TABLE topics (
 );
 CREATE TABLE topic_i18n (
   topic_id TEXT NOT NULL REFERENCES topics(id) ON DELETE CASCADE,
-  lang     TEXT NOT NULL CHECK (lang IN ('it','en','ar','fr')),
+  lang     TEXT NOT NULL CHECK (lang IN ('it','en','ar','fr','es','de')),
   name     TEXT NOT NULL,
   PRIMARY KEY (topic_id, lang)
 );
@@ -128,7 +128,7 @@ CREATE TABLE templates (
 );
 CREATE TABLE template_i18n (
   template_id TEXT NOT NULL REFERENCES templates(id) ON DELETE CASCADE,
-  lang        TEXT NOT NULL CHECK (lang IN ('it','en','ar','fr')),
+  lang        TEXT NOT NULL CHECK (lang IN ('it','en','ar','fr','es','de')),
   title       TEXT NOT NULL,
   body        TEXT NOT NULL,
   PRIMARY KEY (template_id, lang)
@@ -146,7 +146,7 @@ CREATE TABLE events (
 );
 CREATE TABLE event_i18n (
   event_id    TEXT NOT NULL REFERENCES events(id) ON DELETE CASCADE,
-  lang        TEXT NOT NULL CHECK (lang IN ('it','en','ar','fr')),
+  lang        TEXT NOT NULL CHECK (lang IN ('it','en','ar','fr','es','de')),
   name        TEXT NOT NULL,
   description TEXT,
   PRIMARY KEY (event_id, lang)

@@ -2,13 +2,10 @@
   "@@locale": "it",
   "appTitle": "Niyah",
   "tagline": "Rinnova la tua intenzione.",
-  "navHome": "Home",
   "navNotifications": "Le mie notifiche",
   "navStoPer": "Sto per…",
   "navSettings": "Impostazioni",
-  "homeNotificationsBody": "Scegli quando ricordare la tua intenzione.",
-  "homeStoPerBody": "Prima di un'azione, rinnova l'intenzione.",
-  "homeSettingsBody": "Lingua, Non disturbare, pausa.",
+  "navStandard": "Notifiche standard",
   "next": "Avanti",
   "back": "Indietro",
   "start": "Inizia",
@@ -24,6 +21,29 @@
   "sectionSuggested": "Suggeriti da Niyah",
   "sectionContent": "Contenuti islamici",
   "sectionWeekly": "Settimanali e stagionali",
+  "randomTitle": "Notifiche random",
+  "randomSubtitle": "{count} brevi inviti al giorno, in momenti a sorpresa tra le {start} e le {end}.",
+  "@randomSubtitle": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      },
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "personalEmpty": "Non hai ancora creato notifiche. Tocca «Nuova notifica» per scriverne una tua.",
+  "newNotification": "Nuova notifica",
+  "editNotification": "Modifica notifica",
+  "fieldTitle": "Titolo (facoltativo)",
+  "fieldText": "Testo",
+  "errorTextRequired": "Scrivi il testo della notifica.",
+  "delete": "Elimina",
+  "deleteQuestion": "Eliminare questa notifica?",
   "contentComingSoon": "Versetti e hadith arrivano solo dopo la verifica delle fonti. Questa sezione si attiverà quando saranno disponibili.",
   "notificationsOff": "Le notifiche di Niyah sono disattivate su questo telefono.",
   "openSettings": "Apri impostazioni",
@@ -66,6 +86,7 @@
   "errorDaysRequired": "Scegli almeno un giorno.",
   "stoPerEmpty": "I contenuti per questo momento arriveranno dopo la verifica delle fonti.",
   "settingsLanguage": "Lingua",
+  "settingsNotifications": "Notifiche",
   "settingsQuietHours": "Non disturbare",
   "quietHoursOff": "Disattivato",
   "quietHoursRange": "Dalle {start} alle {end}",
@@ -142,6 +163,16 @@
   "notifTapToRead": "Tocca per leggere",
   "notifRefreshBody": "Apri Niyah per continuare a ricevere i promemoria.",
   "notifPrivateBody": "Ricorda la tua intenzione",
+  "randomTitle1": "Rinnova la tua intenzione",
+  "randomBody1": "Ciò che stai facendo ora, fallo cercando il compiacimento di Allah.",
+  "randomTitle2": "Con quale intenzione?",
+  "randomBody2": "Fermati un attimo e chiediti per chi lo stai facendo.",
+  "randomTitle3": "Un momento per Allah",
+  "randomBody3": "Fermati un momento e ricorda Allah.",
+  "randomTitle4": "Un gesto gentile",
+  "randomBody4": "C'è qualcuno a cui puoi fare del bene oggi?",
+  "randomTitle5": "Ricomincia con una buona intenzione",
+  "randomBody5": "Rinnova l'intenzione prima di continuare la tua giornata.",
   "channelPrayer": "Preghiera",
   "channelNiyyah": "Niyyah",
   "channelQuran": "Corano",

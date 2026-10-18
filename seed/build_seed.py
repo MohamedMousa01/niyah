@@ -23,7 +23,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-LANGS = ("it", "en", "ar", "fr")
+LANGS = ("it", "en", "ar", "fr", "es", "de")
 NOW = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
 
@@ -162,7 +162,7 @@ def build(out: Path, cities: Path | None = None, content: Path | None = None) ->
         n_cities = import_geonames(db, cities)
 
     db.execute("INSERT INTO sync_meta VALUES ('seed_built_at', ?)", (NOW,))
-    db.execute("INSERT INTO sync_meta VALUES ('schema_version', '1')")
+    db.execute("INSERT INTO sync_meta VALUES ('schema_version', '2')")
     db.commit()
     check = db.execute("PRAGMA integrity_check").fetchone()[0]
     fk = db.execute("PRAGMA foreign_key_check").fetchall()

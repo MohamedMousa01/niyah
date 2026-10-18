@@ -67,52 +67,6 @@ class NiyahHeader extends StatelessWidget {
   }
 }
 
-/// Card di navigazione della Home.
-class IslamicCard extends StatelessWidget {
-  const IslamicCard({super.key, required this.icon, required this.title, required this.body, required this.onTap});
-
-  final IconData icon;
-  final String title;
-  final String body;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(NiyahSpace.m),
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: 22,
-                backgroundColor: theme.colorScheme.secondaryContainer,
-                foregroundColor: theme.colorScheme.primary,
-                child: Icon(icon),
-              ),
-              const SizedBox(width: NiyahSpace.m),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
-                    const SizedBox(height: NiyahSpace.xs),
-                    Text(body, style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-                  ],
-                ),
-              ),
-              Icon(Icons.chevron_right, color: theme.colorScheme.onSurfaceVariant),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class SectionHeader extends StatelessWidget {
   const SectionHeader(this.text, {super.key});
 

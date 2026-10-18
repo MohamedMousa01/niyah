@@ -7,10 +7,17 @@ import 'package:flutter/foundation.dart';
 import 'package:niyah_core/niyah_core.dart' as core;
 import 'package:shared_preferences/shared_preferences.dart';
 
-const kSupportedLanguages = ['it', 'en', 'fr', 'ar'];
+const kSupportedLanguages = ['it', 'ar', 'en', 'fr', 'es', 'de'];
 
 /// Nome di ogni lingua scritto nella lingua stessa.
-const kLanguageNames = {'it': 'Italiano', 'en': 'English', 'fr': 'Français', 'ar': 'العربية'};
+const kLanguageNames = {
+  'it': 'Italiano',
+  'ar': 'العربية',
+  'en': 'English',
+  'fr': 'Français',
+  'es': 'Español',
+  'de': 'Deutsch',
+};
 
 class AppSettings extends ChangeNotifier {
   AppSettings(this._prefs, {String? deviceLanguage, DateTime Function()? clock}) : _clock = clock ?? DateTime.now {
@@ -22,6 +29,7 @@ class AppSettings extends ChangeNotifier {
     _quietHours = core.QuietHours.fromJson(_decode(_prefs.getString(_kQuietHours)));
     _pausedUntil = DateTime.tryParse(_prefs.getString(_kPausedUntil) ?? '')?.toUtc();
     _deviceId = _prefs.getString(_kDeviceId) ?? _newDeviceId();
+    _randomEnabled = _prefs.getBool(_kRandom) ?? true;
   }
 
   static const _kLanguage = 'language';
@@ -29,6 +37,7 @@ class AppSettings extends ChangeNotifier {
   static const _kQuietHours = 'quiet_hours';
   static const _kPausedUntil = 'paused_until';
   static const _kDeviceId = 'device_id';
+  static const _kRandom = 'random_notifications';
 
   final SharedPreferences _prefs;
   final DateTime Function() _clock;
@@ -38,10 +47,15 @@ class AppSettings extends ChangeNotifier {
   late core.QuietHours _quietHours;
   DateTime? _pausedUntil;
   late String _deviceId;
+  late bool _randomEnabled;
 
   String get language => _language;
   bool get onboardingCompleted => _onboardingCompleted;
   core.QuietHours get quietHours => _quietHours;
+
+  /// Notifiche random: brevi inviti a orari casuali durante il giorno.
+  /// Attive per default, l'utente le può spegnere.
+  bool get randomEnabled => _randomEnabled;
 
   /// Istante UTC fino a cui tutte le notifiche sono in pausa (null = attive).
   DateTime? get pausedUntil {
@@ -99,6 +113,12 @@ class AppSettings extends ChangeNotifier {
     } else {
       await _prefs.setString(_kPausedUntil, _pausedUntil!.toIso8601String());
     }
+    notifyListeners();
+  }
+
+  Future<void> setRandomEnabled(bool enabled) async {
+    _randomEnabled = enabled;
+    await _prefs.setBool(_kRandom, enabled);
     notifyListeners();
   }
 }

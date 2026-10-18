@@ -120,6 +120,18 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
     );
   }
 
+  /// Testi delle notifiche random nella lingua attiva.
+  List<core.TextPair> randomTexts() {
+    final l = _l10n;
+    return [
+      core.TextPair(l.randomTitle1, l.randomBody1),
+      core.TextPair(l.randomTitle2, l.randomBody2),
+      core.TextPair(l.randomTitle3, l.randomBody3),
+      core.TextPair(l.randomTitle4, l.randomBody4),
+      core.TextPair(l.randomTitle5, l.randomBody5),
+    ];
+  }
+
   /// Dopo il primo frame: notifiche pronte e programmazione aggiornata.
   /// Nessuna schermata aspetta questo lavoro (architettura §11).
   Future<void> start() async {
@@ -193,6 +205,7 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
             budget: gateway.isIos ? core.PlannerSettings.iosBudget : core.PlannerSettings.androidBudget,
             quietHours: settings.quietHours,
             pausedUntil: settings.pausedUntil,
+            randomTexts: settings.randomEnabled ? randomTexts() : const [],
           ),
           now,
           existing: pending,
@@ -255,6 +268,42 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
 
   Future<void> updateFixedSchedule(String reminderId, core.LocalTime time, int daysMask) async {
     await reminders.updateFixedSchedule(reminderId, time, daysMask, deviceId: settings.deviceId);
+    notifyListeners();
+    await reschedule();
+  }
+
+  Future<void> setRandomEnabled(bool enabled) async {
+    await settings.setRandomEnabled(enabled);
+    await reschedule();
+  }
+
+  Future<void> savePersonal({
+    String? id,
+    required String title,
+    required String body,
+    required core.LocalTime time,
+    required int daysMask,
+  }) async {
+    await reminders.savePersonal(
+      id: id,
+      title: title,
+      body: body,
+      time: time,
+      daysMask: daysMask,
+      deviceId: settings.deviceId,
+    );
+    notifyListeners();
+    await reschedule();
+  }
+
+  Future<void> setReminderEnabled(String reminderId, bool enabled) async {
+    await reminders.setEnabled(reminderId, enabled, deviceId: settings.deviceId);
+    notifyListeners();
+    await reschedule();
+  }
+
+  Future<void> deleteReminder(String reminderId) async {
+    await reminders.delete(reminderId, deviceId: settings.deviceId);
     notifyListeners();
     await reschedule();
   }

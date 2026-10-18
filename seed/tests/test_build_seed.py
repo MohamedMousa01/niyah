@@ -34,8 +34,8 @@ class BuildSeedTest(unittest.TestCase):
         self.assertEqual(counts["topics"], 10)
         self.assertEqual(counts["content_items"], 0)
         db = sqlite3.connect(self.out)
-        # ogni categoria e argomento ha le 4 lingue
-        self.assertEqual(db.execute("SELECT COUNT(*) FROM category_i18n").fetchone()[0], counts["categories"] * 4)
+        # ogni categoria e argomento ha le 6 lingue
+        self.assertEqual(db.execute("SELECT COUNT(*) FROM category_i18n").fetchone()[0], counts["categories"] * len(build_seed.LANGS))
         # i modelli che richiamano una pratica restano spenti senza fonte verificata
         inactive = {r[0] for r in db.execute("SELECT id FROM templates WHERE active = 0")}
         self.assertEqual(inactive, {"monday_fast_eve", "thursday_fast_eve", "jumuah_morning", "kahf_friday"})
