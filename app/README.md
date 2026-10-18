@@ -10,7 +10,9 @@ Ogni pull request e ogni modifica a `main` producono un APK installabile:
 2. In fondo alla pagina, sotto **Artifacts**, scarica `niyah-apk` (un file zip).
 3. Estrai `app-release.apk` e aprilo sul telefono Android. La prima volta Android chiede di consentire l'installazione da quella fonte.
 
-L'APK è firmato con una chiave di prova: va bene per i test, non per Google Play.
+L'APK è firmato con una chiave di prova fissa, così ogni nuova versione si installa sopra la precedente senza perdere i dati. Va bene per i test, non per Google Play.
+
+La chiave arriva da quattro segreti del repository (Settings › Secrets and variables › Actions): `NIYAH_KEYSTORE_BASE64` (il file della chiave in base64), `NIYAH_KEYSTORE_PASSWORD`, `NIYAH_KEY_ALIAS` e `NIYAH_KEY_PASSWORD`. Se mancano, la CI firma con una chiave temporanea e l'APK non si installa sopra una versione firmata con la chiave fissa. Nel log del passo "Impronta della chiave" si vede con quale chiave è stato firmato.
 
 ## Sviluppo
 

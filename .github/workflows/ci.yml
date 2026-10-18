@@ -91,7 +91,39 @@ jobs:
       - run: flutter pub get
       - run: flutter analyze
       - run: flutter test
+      - name: Chiave di firma fissa (dai segreti, oppure temporanea)
+        env:
+          KEYSTORE_BASE64: ${{ secrets.NIYAH_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.NIYAH_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.NIYAH_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.NIYAH_KEY_PASSWORD }}
+        run: |
+          ks="$RUNNER_TEMP/niyah.jks"
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > "$ks"
+            {
+              echo "NIYAH_KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD"
+              echo "NIYAH_KEY_ALIAS=$KEY_ALIAS"
+              echo "NIYAH_KEY_PASSWORD=$KEY_PASSWORD"
+            } >> "$GITHUB_ENV"
+          else
+            # Senza segreti (es. PR da fork) l'APK si firma con una chiave usa e getta:
+            # funziona, ma non si installa sopra la versione precedente.
+            echo "::warning::Segreti NIYAH_KEYSTORE_* mancanti: APK firmato con una chiave temporanea"
+            keytool -genkeypair -storetype PKCS12 -keystore "$ks" -alias niyah -keyalg RSA \
+              -keysize 2048 -validity 1 -storepass temporanea -keypass temporanea -dname "CN=Niyah temporanea"
+            {
+              echo "NIYAH_KEYSTORE_PASSWORD=temporanea"
+              echo "NIYAH_KEY_ALIAS=niyah"
+              echo "NIYAH_KEY_PASSWORD=temporanea"
+            } >> "$GITHUB_ENV"
+          fi
+          echo "NIYAH_KEYSTORE_PATH=$ks" >> "$GITHUB_ENV"
       - run: flutter build apk --release
+      - name: Impronta della chiave che ha firmato l'APK
+        run: |
+          apksigner="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)/apksigner"
+          "$apksigner" verify --print-certs build/app/outputs/flutter-apk/app-release.apk | grep -E "DN:|SHA-256"
       - uses: actions/upload-artifact@v4
         with:
           name: niyah-apk
