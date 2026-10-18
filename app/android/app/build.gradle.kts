@@ -4,6 +4,11 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// Chiave fissa per gli APK di prova: la CI la ricostruisce dai segreti di GitHub
+// (vedi .github/workflows/ci.yml). Senza, si usa la chiave di debug, che cambia da
+// macchina a macchina e costringe a disinstallare l'app prima di ogni aggiornamento.
+val niyahKeystore = System.getenv("NIYAH_KEYSTORE_PATH")?.takeIf { it.isNotBlank() }?.let { file(it) }
+
 android {
     namespace = "app.niyah"
     compileSdk = flutter.compileSdkVersion
@@ -32,11 +37,21 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        if (niyahKeystore != null) {
+            create("niyah") {
+                storeFile = niyahKeystore
+                storePassword = System.getenv("NIYAH_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("NIYAH_KEY_ALIAS")
+                keyPassword = System.getenv("NIYAH_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // Per ora firmato con la chiave di debug: l'APK serve solo per le prove.
-            // La chiave di pubblicazione (key.properties) non va mai nel repository.
-            signingConfig = signingConfigs.getByName("debug")
+            // La chiave non va mai nel repository: arriva solo da variabili d'ambiente.
+            signingConfig = signingConfigs.getByName(if (niyahKeystore != null) "niyah" else "debug")
         }
     }
 }

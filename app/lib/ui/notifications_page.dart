@@ -5,7 +5,9 @@ import '../data/catalog_repository.dart';
 import '../l10n/app_localizations.dart';
 import '../state/app_controller.dart';
 import '../state/app_scope.dart';
+import '../services/random_reminders.dart';
 import '../theme/niyah_theme.dart';
+import 'home_shell.dart';
 import 'widgets.dart';
 
 class _Data {
@@ -16,15 +18,15 @@ class _Data {
   final Map<String, int> contentCounts;
 }
 
-/// "Le mie notifiche": il cuore dell'app (architettura §2.2).
-class NotificationsPage extends StatefulWidget {
-  const NotificationsPage({super.key});
+/// "Notifiche standard": le notifiche random e i modelli proposti da Niyah.
+class StandardNotificationsPage extends StatefulWidget {
+  const StandardNotificationsPage({super.key});
 
   @override
-  State<NotificationsPage> createState() => _NotificationsPageState();
+  State<StandardNotificationsPage> createState() => _StandardNotificationsPageState();
 }
 
-class _NotificationsPageState extends State<NotificationsPage> {
+class _StandardNotificationsPageState extends State<StandardNotificationsPage> {
   Future<_Data>? _data;
   String? _lang;
 
@@ -48,7 +50,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
     final l = AppLocalizations.of(context);
     final c = AppScope.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(l.navNotifications)),
+      appBar: AppBar(title: Text(l.navStandard), actions: const [SettingsButton()]),
       body: FutureBuilder<_Data>(
         key: ValueKey(_lang),
         future: _data,
@@ -68,6 +70,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
             children: [
               if (c.notificationsEnabled == false)
                 NoticeBanner(text: l.notificationsOff, actionLabel: l.openSettings, onAction: c.gateway.openSettings),
+              const SizedBox(height: NiyahSpace.s),
+              const _RandomTile(),
               if (suggested.isNotEmpty) ...[
                 SectionHeader(l.sectionSuggested),
                 _TemplateGroup(templates: suggested, reminders: data.reminders),
@@ -86,6 +90,30 @@ class _NotificationsPageState extends State<NotificationsPage> {
         },
       ),
     );
+  }
+}
+
+/// Interruttore delle notifiche random.
+class _RandomTile extends StatelessWidget {
+  const _RandomTile();
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final c = AppScope.of(context);
+    return RowGroup(children: [
+      SwitchListTile(
+        secondary: const Icon(Icons.shuffle),
+        title: Text(l.randomTitle),
+        subtitle: Text(l.randomSubtitle(
+          '${RandomReminders.perDay}',
+          formatTime(context, RandomReminders.windowStart),
+          formatTime(context, RandomReminders.windowEnd),
+        )),
+        value: c.settings.randomEnabled,
+        onChanged: c.setRandomEnabled,
+      ),
+    ]);
   }
 }
 

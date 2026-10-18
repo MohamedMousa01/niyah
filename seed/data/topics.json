@@ -1,15 +1,15 @@
 {
   "_note": "Argomenti di \"Sto per…\". Solo nomi: i contenuti collegati (versetti e hadith verificati) arrivano dal pannello admin tramite topic_content.",
   "topics": [
-    {"id": "eat", "icon": "restaurant", "names": {"it": "Mangiare", "en": "Eating", "fr": "Manger", "ar": "الأكل"}},
-    {"id": "work", "icon": "work", "names": {"it": "Lavorare", "en": "Working", "fr": "Travailler", "ar": "العمل"}},
-    {"id": "study", "icon": "book", "names": {"it": "Studiare", "en": "Studying", "fr": "Étudier", "ar": "الدراسة"}},
-    {"id": "pray", "icon": "prayer", "names": {"it": "Pregare", "en": "Praying", "fr": "Prier", "ar": "الصلاة"}},
-    {"id": "sleep", "icon": "bedtime", "names": {"it": "Dormire", "en": "Sleeping", "fr": "Dormir", "ar": "النوم"}},
-    {"id": "travel", "icon": "flight", "names": {"it": "Viaggiare", "en": "Travelling", "fr": "Voyager", "ar": "السفر"}},
-    {"id": "family", "icon": "family", "names": {"it": "Famiglia", "en": "Family", "fr": "Famille", "ar": "العائلة"}},
-    {"id": "sport", "icon": "sport", "names": {"it": "Sport", "en": "Sport", "fr": "Sport", "ar": "الرياضة"}},
-    {"id": "shopping", "icon": "shopping", "names": {"it": "Fare acquisti", "en": "Shopping", "fr": "Faire des achats", "ar": "التسوق"}},
-    {"id": "socialize", "icon": "groups", "names": {"it": "Socializzare", "en": "Socialising", "fr": "Voir des gens", "ar": "لقاء الناس"}}
+    {"id": "eat", "icon": "restaurant", "names": {"it": "Mangiare", "en": "Eating", "fr": "Manger", "ar": "الأكل", "es": "Comer", "de": "Essen"}},
+    {"id": "work", "icon": "work", "names": {"it": "Lavorare", "en": "Working", "fr": "Travailler", "ar": "العمل", "es": "Trabajar", "de": "Arbeiten"}},
+    {"id": "study", "icon": "book", "names": {"it": "Studiare", "en": "Studying", "fr": "Étudier", "ar": "الدراسة", "es": "Estudiar", "de": "Lernen"}},
+    {"id": "pray", "icon": "prayer", "names": {"it": "Pregare", "en": "Praying", "fr": "Prier", "ar": "الصلاة", "es": "Rezar", "de": "Beten"}},
+    {"id": "sleep", "icon": "bedtime", "names": {"it": "Dormire", "en": "Sleeping", "fr": "Dormir", "ar": "النوم", "es": "Dormir", "de": "Schlafen"}},
+    {"id": "travel", "icon": "flight", "names": {"it": "Viaggiare", "en": "Travelling", "fr": "Voyager", "ar": "السفر", "es": "Viajar", "de": "Reisen"}},
+    {"id": "family", "icon": "family", "names": {"it": "Famiglia", "en": "Family", "fr": "Famille", "ar": "العائلة", "es": "Familia", "de": "Familie"}},
+    {"id": "sport", "icon": "sport", "names": {"it": "Sport", "en": "Sport", "fr": "Sport", "ar": "الرياضة", "es": "Deporte", "de": "Sport"}},
+    {"id": "shopping", "icon": "shopping", "names": {"it": "Fare acquisti", "en": "Shopping", "fr": "Faire des achats", "ar": "التسوق", "es": "Compras", "de": "Einkaufen"}},
+    {"id": "socialize", "icon": "groups", "names": {"it": "Socializzare", "en": "Socialising", "fr": "Voir des gens", "ar": "لقاء الناس", "es": "Estar con otros", "de": "Unter Leuten sein"}}
   ]
 }

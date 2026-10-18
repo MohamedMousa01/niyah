@@ -35,7 +35,7 @@ class SettingsPage extends StatelessWidget {
               onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const LanguagePage())),
             ),
           ]),
-          SectionHeader(l.navNotifications),
+          SectionHeader(l.settingsNotifications),
           RowGroup(children: [
             SettingRow(
               icon: Icons.notifications_outlined,

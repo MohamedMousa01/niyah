@@ -21,7 +21,7 @@ Future<NiyahDatabase> openTestDatabase() async {
   final db = await databaseFactoryFfiNoIsolate.openDatabase(inMemoryDatabasePath,
       options: OpenDatabaseOptions(singleInstance: false));
   final schema = File('../seed/schema.sql').readAsStringSync();
-  for (final stmt in _statements(schema)) {
+  for (final stmt in sqlStatements(schema)) {
     await db.execute(stmt);
   }
   await db.insert('categories', {'id': 'niyyah', 'sort': 0, 'active': 1, 'updated_at': _now});
@@ -43,19 +43,19 @@ Future<NiyahDatabase> openTestDatabase() async {
       'active': active,
       'updated_at': _now,
     });
-    for (final (lang, title) in [('it', it), ('en', '$it (en)'), ('fr', '$it (fr)'), ('ar', ar)]) {
+    for (final (lang, title) in [('it', it), ('en', '$it (en)'), ('fr', '$it (fr)'), ('ar', ar), ('es', '$it (es)'), ('de', '$it (de)')]) {
       await db.insert('template_i18n', {'template_id': id, 'lang': lang, 'title': title, 'body': '$title: testo'});
     }
   }
   await db.insert('topics', {'id': 'eat', 'icon': 'restaurant', 'sort': 0, 'active': 1, 'updated_at': _now});
-  for (final (lang, name) in [('it', 'Mangiare'), ('en', 'Eating'), ('fr', 'Manger'), ('ar', 'الأكل')]) {
+  for (final (lang, name) in [('it', 'Mangiare'), ('en', 'Eating'), ('fr', 'Manger'), ('ar', 'الأكل'), ('es', 'Comer'), ('de', 'Essen')]) {
     await db.insert('topic_i18n', {'topic_id': 'eat', 'lang': lang, 'name': name});
   }
   return NiyahDatabase(db);
 }
 
 /// Divide lo script SQL in istruzioni, tenendo insieme i corpi dei trigger.
-List<String> _statements(String sql) {
+List<String> sqlStatements(String sql) {
   final out = <String>[];
   final buf = StringBuffer();
   var inTrigger = false;
@@ -142,8 +142,10 @@ Future<AppController> makeController({
   FakeGateway? gateway,
   NiyahDatabase? database,
 }) async {
-  SharedPreferences.setMockInitialValues(prefs);
-  final settings = AppSettings(await SharedPreferences.getInstance());
+  // Notifiche random spente, salvo richiesta: i test sui modelli contano le
+  // notifiche programmate e non devono vedere quelle a sorpresa.
+  SharedPreferences.setMockInitialValues({'random_notifications': false, ...prefs});
+  final settings = AppSettings(await SharedPreferences.getInstance(), clock: now == null ? null : () => now);
   return AppController(
     settings: settings,
     database: database ?? await openTestDatabase(),

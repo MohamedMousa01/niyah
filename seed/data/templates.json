@@ -3,7 +3,7 @@
     "Modelli di notifica iniziali. Sono inviti brevi e rispettosi, senza citazioni né affermazioni religiose.",
     "Un modello con requires_source = true richiama una pratica (digiuno del lunedì, al-Kahf…) e resta DISATTIVATO finché non viene collegato a un contenuto verificato (source_content_id).",
     "Nessun modello è attivo per default sul dispositivo: l'utente li sceglie nell'onboarding o in Le mie notifiche.",
-    "Le traduzioni en/fr/ar vanno riviste da madrelingua."
+    "Le traduzioni en/fr/ar/es/de vanno riviste da madrelingua."
   ],
   "templates": [
     {
@@ -13,7 +13,9 @@
         "it": {"title": "Rinnova la tua intenzione", "body": "Inizia la giornata cercando il compiacimento di Allah."},
         "en": {"title": "Renew your intention", "body": "Begin your day seeking the pleasure of Allah."},
         "fr": {"title": "Renouvelle ton intention", "body": "Commence ta journée en recherchant l'agrément d'Allah."},
-        "ar": {"title": "جدّد نيتك", "body": "ابدأ يومك ابتغاء مرضاة الله."}
+        "ar": {"title": "جدّد نيتك", "body": "ابدأ يومك ابتغاء مرضاة الله."},
+        "es": {"title": "Renueva tu intención", "body": "Empieza el día buscando la complacencia de Allah."},
+        "de": {"title": "Erneuere deine Absicht", "body": "Beginne deinen Tag mit dem Wunsch nach Allahs Wohlgefallen."}
       }
     },
     {
@@ -24,7 +26,9 @@
         "it": {"title": "Ricorda Allah nel tuo lavoro", "body": "Fai questo lavoro cercando la ricompensa di Allah."},
         "en": {"title": "Remember Allah in your work", "body": "Do this work seeking the reward of Allah."},
         "fr": {"title": "Souviens-toi d'Allah dans ton travail", "body": "Accomplis ce travail en recherchant la récompense d'Allah."},
-        "ar": {"title": "اذكر الله في عملك", "body": "أدِّ هذا العمل ابتغاء أجر الله."}
+        "ar": {"title": "اذكر الله في عملك", "body": "أدِّ هذا العمل ابتغاء أجر الله."},
+        "es": {"title": "Recuerda a Allah en tu trabajo", "body": "Haz este trabajo buscando la recompensa de Allah."},
+        "de": {"title": "Gedenke Allahs bei deiner Arbeit", "body": "Verrichte diese Arbeit in der Hoffnung auf Allahs Lohn."}
       }
     },
     {
@@ -35,7 +39,9 @@
         "it": {"title": "Intenzione prima dello studio", "body": "Studia con l'intenzione di cercare la conoscenza per Allah."},
         "en": {"title": "Intention before studying", "body": "Study with the intention of seeking knowledge for the sake of Allah."},
         "fr": {"title": "Intention avant d'étudier", "body": "Étudie avec l'intention de rechercher la science pour Allah."},
-        "ar": {"title": "النية قبل الدراسة", "body": "ادرس بنية طلب العلم لوجه الله."}
+        "ar": {"title": "النية قبل الدراسة", "body": "ادرس بنية طلب العلم لوجه الله."},
+        "es": {"title": "Intención antes de estudiar", "body": "Estudia con la intención de buscar el conocimiento por Allah."},
+        "de": {"title": "Absicht vor dem Lernen", "body": "Lerne mit der Absicht, Wissen um Allahs willen zu suchen."}
       }
     },
     {
@@ -45,7 +51,9 @@
         "it": {"title": "Intenzione in famiglia", "body": "Vivi il tempo con la tua famiglia con una buona intenzione."},
         "en": {"title": "Intention with your family", "body": "Spend time with your family with a good intention."},
         "fr": {"title": "Intention en famille", "body": "Passe du temps avec ta famille avec une bonne intention."},
-        "ar": {"title": "النية مع العائلة", "body": "اقضِ وقتك مع عائلتك بنية صالحة."}
+        "ar": {"title": "النية مع العائلة", "body": "اقضِ وقتك مع عائلتك بنية صالحة."},
+        "es": {"title": "Intención en familia", "body": "Vive el tiempo con tu familia con una buena intención."},
+        "de": {"title": "Absicht in der Familie", "body": "Verbringe die Zeit mit deiner Familie mit einer guten Absicht."}
       }
     },
     {
@@ -55,7 +63,9 @@
         "it": {"title": "Un momento per il dhikr", "body": "Fermati un istante e ricorda Allah."},
         "en": {"title": "A moment for dhikr", "body": "Pause for a moment and remember Allah."},
         "fr": {"title": "Un moment pour le dhikr", "body": "Arrête-toi un instant et souviens-toi d'Allah."},
-        "ar": {"title": "لحظة ذكر", "body": "توقف لحظة واذكر الله."}
+        "ar": {"title": "لحظة ذكر", "body": "توقف لحظة واذكر الله."},
+        "es": {"title": "Un momento para el dhikr", "body": "Detente un instante y recuerda a Allah."},
+        "de": {"title": "Ein Moment für Dhikr", "body": "Halte einen Augenblick inne und gedenke Allahs."}
       }
     },
     {
@@ -65,7 +75,9 @@
         "it": {"title": "Adhkar del mattino", "body": "È il momento degli adhkar del mattino."},
         "en": {"title": "Morning adhkar", "body": "It is time for the morning adhkar."},
         "fr": {"title": "Adhkar du matin", "body": "C'est le moment des adhkar du matin."},
-        "ar": {"title": "أذكار الصباح", "body": "حان وقت أذكار الصباح."}
+        "ar": {"title": "أذكار الصباح", "body": "حان وقت أذكار الصباح."},
+        "es": {"title": "Adhkar de la mañana", "body": "Es el momento de los adhkar de la mañana."},
+        "de": {"title": "Morgen-Adhkar", "body": "Es ist Zeit für die Adhkar des Morgens."}
       }
     },
     {
@@ -75,7 +87,9 @@
         "it": {"title": "Adhkar della sera", "body": "È il momento degli adhkar della sera."},
         "en": {"title": "Evening adhkar", "body": "It is time for the evening adhkar."},
         "fr": {"title": "Adhkar du soir", "body": "C'est le moment des adhkar du soir."},
-        "ar": {"title": "أذكار المساء", "body": "حان وقت أذكار المساء."}
+        "ar": {"title": "أذكار المساء", "body": "حان وقت أذكار المساء."},
+        "es": {"title": "Adhkar de la tarde", "body": "Es el momento de los adhkar de la tarde."},
+        "de": {"title": "Abend-Adhkar", "body": "Es ist Zeit für die Adhkar des Abends."}
       }
     },
     {
@@ -85,7 +99,9 @@
         "it": {"title": "Un gesto gentile", "body": "C'è qualcuno a cui oggi puoi fare del bene?"},
         "en": {"title": "A kind gesture", "body": "Is there someone you can do good to today?"},
         "fr": {"title": "Un geste de bonté", "body": "Y a-t-il quelqu'un à qui tu peux faire du bien aujourd'hui ?"},
-        "ar": {"title": "لفتة طيبة", "body": "هل هناك من تستطيع أن تُحسن إليه اليوم؟"}
+        "ar": {"title": "لفتة طيبة", "body": "هل هناك من تستطيع أن تُحسن إليه اليوم؟"},
+        "es": {"title": "Un gesto amable", "body": "¿Hay alguien a quien hoy puedas hacer el bien?"},
+        "de": {"title": "Eine freundliche Geste", "body": "Gibt es heute jemanden, dem du Gutes tun kannst?"}
       }
     },
     {
@@ -95,7 +111,9 @@
         "it": {"title": "Qur'an", "body": "Un versetto durante la giornata."},
         "en": {"title": "Qur'an", "body": "A verse during the day."},
         "fr": {"title": "Coran", "body": "Un verset au cours de la journée."},
-        "ar": {"title": "القرآن", "body": "آية خلال اليوم."}
+        "ar": {"title": "القرآن", "body": "آية خلال اليوم."},
+        "es": {"title": "Corán", "body": "Un versículo durante el día."},
+        "de": {"title": "Koran", "body": "Ein Vers im Laufe des Tages."}
       }
     },
     {
@@ -105,7 +123,9 @@
         "it": {"title": "Hadith", "body": "Un hadith durante la giornata."},
         "en": {"title": "Hadith", "body": "A hadith during the day."},
         "fr": {"title": "Hadith", "body": "Un hadith au cours de la journée."},
-        "ar": {"title": "الحديث", "body": "حديث خلال اليوم."}
+        "ar": {"title": "الحديث", "body": "حديث خلال اليوم."},
+        "es": {"title": "Hadiz", "body": "Un hadiz durante el día."},
+        "de": {"title": "Hadith", "body": "Ein Hadith im Laufe des Tages."}
       }
     },
     {
@@ -115,7 +135,9 @@
         "it": {"title": "Domani è lunedì", "body": "Promemoria per il digiuno volontario del lunedì."},
         "en": {"title": "Tomorrow is Monday", "body": "A reminder for the voluntary Monday fast."},
         "fr": {"title": "Demain, c'est lundi", "body": "Rappel pour le jeûne surérogatoire du lundi."},
-        "ar": {"title": "غدًا الاثنين", "body": "تذكير بصيام التطوع يوم الاثنين."}
+        "ar": {"title": "غدًا الاثنين", "body": "تذكير بصيام التطوع يوم الاثنين."},
+        "es": {"title": "Mañana es lunes", "body": "Recordatorio del ayuno voluntario del lunes."},
+        "de": {"title": "Morgen ist Montag", "body": "Erinnerung an das freiwillige Fasten am Montag."}
       }
     },
     {
@@ -125,7 +147,9 @@
         "it": {"title": "Domani è giovedì", "body": "Promemoria per il digiuno volontario del giovedì."},
         "en": {"title": "Tomorrow is Thursday", "body": "A reminder for the voluntary Thursday fast."},
         "fr": {"title": "Demain, c'est jeudi", "body": "Rappel pour le jeûne surérogatoire du jeudi."},
-        "ar": {"title": "غدًا الخميس", "body": "تذكير بصيام التطوع يوم الخميس."}
+        "ar": {"title": "غدًا الخميس", "body": "تذكير بصيام التطوع يوم الخميس."},
+        "es": {"title": "Mañana es jueves", "body": "Recordatorio del ayuno voluntario del jueves."},
+        "de": {"title": "Morgen ist Donnerstag", "body": "Erinnerung an das freiwillige Fasten am Donnerstag."}
       }
     },
     {
@@ -135,7 +159,9 @@
         "it": {"title": "Jumu'ah", "body": "Oggi è venerdì."},
         "en": {"title": "Jumu'ah", "body": "Today is Friday."},
         "fr": {"title": "Jumu'a", "body": "Aujourd'hui, c'est vendredi."},
-        "ar": {"title": "الجمعة", "body": "اليوم يوم الجمعة."}
+        "ar": {"title": "الجمعة", "body": "اليوم يوم الجمعة."},
+        "es": {"title": "Yumu'a", "body": "Hoy es viernes."},
+        "de": {"title": "Dschumu'a", "body": "Heute ist Freitag."}
       }
     },
     {
@@ -145,7 +171,9 @@
         "it": {"title": "Surah al-Kahf", "body": "Promemoria per la lettura di Surah al-Kahf."},
         "en": {"title": "Surah al-Kahf", "body": "A reminder to read Surah al-Kahf."},
         "fr": {"title": "Sourate al-Kahf", "body": "Rappel pour la lecture de la sourate al-Kahf."},
-        "ar": {"title": "سورة الكهف", "body": "تذكير بقراءة سورة الكهف."}
+        "ar": {"title": "سورة الكهف", "body": "تذكير بقراءة سورة الكهف."},
+        "es": {"title": "Sura al-Kahf", "body": "Recordatorio para leer la sura al-Kahf."},
+        "de": {"title": "Sure al-Kahf", "body": "Erinnerung an das Lesen der Sure al-Kahf."}
       }
     }
   ]

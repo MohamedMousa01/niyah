@@ -101,4 +101,43 @@ void main() {
     expect(s.prayerBefore, '{prayer} tra {minutes} minuti');
     expect(s.prayerNames[core.Prayer.fajr], 'Fajr');
   });
+
+  test('notifiche random: 3 al giorno tra le 9 e le 21, e si possono spegnere', () async {
+    await c.setRandomEnabled(true);
+    final random = gateway.scheduled.values.where((n) => n.reminderId.startsWith('random|')).toList();
+    // 7 giorni da martedì 14 ottobre alle 10:00: il primo invito di oggi può essere già passato.
+    expect(random.length, inInclusiveRange(20, 21));
+    for (final n in random) {
+      expect(n.repeat, core.RepeatKind.none);
+      expect(n.channel, 'niyyah');
+      expect(n.fireAt.hour, inInclusiveRange(9, 20));
+      expect(n.title, isNotEmpty);
+    }
+    final first = {for (final n in random) n.id};
+    await c.reschedule();
+    final again = {for (final n in gateway.scheduled.values.where((n) => n.reminderId.startsWith('random|'))) n.id};
+    expect(again, first, reason: 'riprogrammare non cambia orari né testi');
+
+    await c.setRandomEnabled(false);
+    expect(gateway.scheduled.values.where((n) => n.reminderId.startsWith('random|')), isEmpty);
+  });
+
+  test('notifiche personalizzate: il testo dell\'utente arriva così com\'è', () async {
+    await c.savePersonal(title: '', body: 'Bevi un bicchiere d\'acqua', time: const core.LocalTime(15, 30), daysMask: 1 | 4);
+    final r = (await c.reminders.personalReminders()).single;
+    expect(r.scheduleType, core.ScheduleType.weekly);
+    final mine = gateway.scheduled.values.where((n) => n.reminderId == r.id).toList();
+    expect(mine, hasLength(2)); // lunedì e mercoledì
+    expect(mine.map((n) => n.body).toSet(), {'Bevi un bicchiere d\'acqua'});
+    expect(mine.every((n) => n.channel == 'personal' && n.fireAt.hour == 15 && n.fireAt.minute == 30), isTrue);
+
+    await c.setReminderEnabled(r.id, false);
+    expect(gateway.scheduled.values.where((n) => n.reminderId == r.id), isEmpty);
+    await c.setReminderEnabled(r.id, true);
+    expect(gateway.scheduled.values.where((n) => n.reminderId == r.id), hasLength(2));
+
+    await c.deleteReminder(r.id);
+    expect(await c.reminders.personalReminders(), isEmpty);
+    expect(gateway.scheduled.values.where((n) => n.reminderId == r.id), isEmpty);
+  });
 }

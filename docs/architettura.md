@@ -44,14 +44,14 @@ Tre regole fondanti:
 
 ## 2. Schermate e navigazione
 
-### 2.1 Barra di navigazione inferiore (4 voci, §35)
+### 2.1 Barra di navigazione inferiore (2 voci, decisione del 18 ottobre 2026)
 
 | Tab | Pagina | Scopo |
 |---|---|---|
-| Home | `HomePage` | Identità, messaggio centrale, 3 accessi rapidi |
-| Le mie notifiche | `NotificationsPage` | Il cuore dell'app |
-| Sto per… | `StoPerPage` | Griglia argomenti |
-| Impostazioni | `SettingsPage` | Lingua, preghiera, quiet hours, pausa, account, privacy |
+| Le mie notifiche | `MyNotificationsPage` | Notifiche scritte dall'utente: testo, orario, giorni |
+| Notifiche standard | `StandardNotificationsPage` | Notifiche random (con interruttore) e modelli proposti da Niyah |
+
+Le Impostazioni (`SettingsPage`) non stanno né nella barra né in una Home: si aprono dall'icona in alto in entrambe le schede. Home e "Sto per…" non sono più nella barra; `StoPerPage` resta nel codice.
 
 ### 2.2 Mappa completa delle pagine
 

@@ -3,7 +3,7 @@
 
 export type Data = Record<string, unknown>;
 
-export const LANGS = ['it', 'en', 'ar', 'fr'] as const;
+export const LANGS = ['it', 'en', 'ar', 'fr', 'es', 'de'] as const;
 
 export const ADMIN_ROLES = ['superAdmin', 'contentAdmin', 'notificationAdmin', 'translator'] as const;
 export type AdminRole = (typeof ADMIN_ROLES)[number];

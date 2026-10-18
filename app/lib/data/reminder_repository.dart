@@ -77,4 +77,74 @@ class ReminderRepository {
       whereArgs: [reminderId],
     );
   }
+
+  /// Notifiche create dall'utente, dalla più vecchia.
+  Future<List<core.Reminder>> personalReminders() async {
+    final rows = await db.query('reminders', where: "kind = 'personal' AND deleted = 0", orderBy: 'created_at, id');
+    return rows.map(core.Reminder.fromRow).toList();
+  }
+
+  /// Crea ([id] null) o modifica una notifica personalizzata. Il testo
+  /// dell'utente si salva così com'è. Tutti i giorni = "ogni giorno".
+  Future<String> savePersonal({
+    String? id,
+    required String title,
+    required String body,
+    required core.LocalTime time,
+    required int daysMask,
+    required String deviceId,
+  }) async {
+    if (daysMask & core.DaysMask.all == 0) {
+      throw ArgumentError.value(daysMask, 'daysMask', 'almeno un giorno');
+    }
+    if (title.trim().isEmpty && body.trim().isEmpty) {
+      throw ArgumentError('serve un testo');
+    }
+    final now = _nowIso();
+    final all = daysMask & core.DaysMask.all == core.DaysMask.all;
+    final values = {
+      'title': title.trim().isEmpty ? null : title,
+      'body': body.trim().isEmpty ? null : body,
+      'schedule_type': all ? 'daily' : 'weekly',
+      'time': time.toString(),
+      'days_mask': daysMask & core.DaysMask.all,
+      'updated_at': now,
+      'device_id': deviceId,
+    };
+    if (id != null) {
+      await db.update('reminders', values, where: 'id = ?', whereArgs: [id]);
+      return id;
+    }
+    final newId = core.generateUuidV4();
+    await db.insert('reminders', {
+      ...values,
+      'id': newId,
+      'kind': 'personal',
+      'start_date': core.LocalDate.of(_clock()).toString(),
+      'enabled': 1,
+      'channel': core.NiyahChannels.personal,
+      'sync_policy': 'cloud',
+      'created_at': now,
+    });
+    return newId;
+  }
+
+  Future<void> setEnabled(String reminderId, bool enabled, {required String deviceId}) async {
+    await db.update(
+      'reminders',
+      {'enabled': enabled ? 1 : 0, 'updated_at': _nowIso(), 'device_id': deviceId},
+      where: 'id = ?',
+      whereArgs: [reminderId],
+    );
+  }
+
+  /// Eliminazione con tombstone, perché la sincronizzazione la propaghi.
+  Future<void> delete(String reminderId, {required String deviceId}) async {
+    await db.update(
+      'reminders',
+      {'deleted': 1, 'enabled': 0, 'updated_at': _nowIso(), 'device_id': deviceId},
+      where: 'id = ?',
+      whereArgs: [reminderId],
+    );
+  }
 }
