@@ -193,5 +193,8 @@
   "channelDhikr": "Dhikr",
   "channelGoodDeeds": "Good deeds",
   "channelIslamicEvents": "Islamic events",
-  "channelPersonal": "Personal"
+  "channelPersonal": "Personal",
+
+  "cPrayerCardSummary": "{prayers} · {timing}",
+  "@cPrayerCardSummary": {"placeholders": {"prayers": {"type": "String"}, "timing": {"type": "String"}}}
 }
