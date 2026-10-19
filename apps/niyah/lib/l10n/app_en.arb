@@ -178,6 +178,10 @@
   "prayerCardBefore": "Before each prayer",
   "prayerCardAtAdhan": "At each adhan",
   "prayerCardAfter": "After each prayer",
+  "ePreviewAtPrayer": "at {prayer}",
+  "@ePreviewAtPrayer": {"placeholders": {"prayer": {"type": "String"}}},
+  "ePreviewAfterPrayer": "after {prayer}",
+  "@ePreviewAfterPrayer": {"placeholders": {"prayer": {"type": "String"}}},
 
   "settingsTitle": "Settings",
   "settingsComingSoon": "Language, prayer times and quiet hours will be here soon.",

@@ -129,7 +129,7 @@ void main() {
     expect(find.byType(EditorScreen), findsOneWidget);
     expect(tester.widget<EditorScreen>(find.byType(EditorScreen)).reminderId, 'p2');
 
-    await tester.pageBack();
+    await tester.tap(find.byWidgetPredicate((w) => w is TapArea && w.semanticLabel == 'Back'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Before each prayer'));
     await tester.pumpAndSettle();

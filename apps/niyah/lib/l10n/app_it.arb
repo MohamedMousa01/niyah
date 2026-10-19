@@ -157,6 +157,8 @@
   "prayerCardBefore": "Prima di ogni preghiera",
   "prayerCardAtAdhan": "A ogni adhan",
   "prayerCardAfter": "Dopo ogni preghiera",
+  "ePreviewAtPrayer": "adhan di {prayer}",
+  "ePreviewAfterPrayer": "dopo {prayer}",
 
   "settingsTitle": "Impostazioni",
   "settingsComingSoon": "Lingua, orari di preghiera e non disturbare arriveranno presto.",
