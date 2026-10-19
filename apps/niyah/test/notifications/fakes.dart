@@ -4,6 +4,9 @@ import 'package:niyah_core/niyah_core.dart';
 final epoch = DateTime.utc(2026);
 const start = LocalDate(2026, 1, 1);
 
+/// Prayer times for Milan, Muslim World League (what Settings would hold).
+const milanPrayers = PrayerSettings(latitude: 45.4643, longitude: 9.1895);
+
 Reminder personal(String id, {LocalTime time = const LocalTime(9, 0), int days = DaysMask.all, String title = 'Title'}) =>
     Reminder(
       id: id,

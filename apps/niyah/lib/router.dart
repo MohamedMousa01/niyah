@@ -6,6 +6,7 @@ import 'features/editor/editor_screen.dart';
 import 'features/home/home_screen.dart';
 import 'features/prayer/prayer_screen.dart';
 import 'features/reminders/reminders_screen.dart';
+import 'features/settings/location_screen.dart';
 import 'features/settings/settings_screen.dart';
 import 'features/shell/app_shell.dart';
 
@@ -14,6 +15,7 @@ abstract final class Routes {
   static const home = '/';
   static const reminders = '/reminders';
   static const settings = '/settings';
+  static const location = '/settings/location';
   static const add = '/reminders/add';
   static const newReminder = '/reminders/new';
   static const prayer = '/reminders/prayer';
@@ -21,10 +23,12 @@ abstract final class Routes {
   static String edit(String id) => '/reminders/edit/$id';
 }
 
-final _rootKey = GlobalKey<NavigatorState>();
+/// The navigator above the tabs: pushed screens and sheets (e.g. a sheet
+/// opened from a notification tap).
+final rootNavigatorKey = GlobalKey<NavigatorState>();
 
 GoRouter buildRouter() => GoRouter(
-      navigatorKey: _rootKey,
+      navigatorKey: rootNavigatorKey,
       initialLocation: Routes.home,
       routes: [
         StatefulShellRoute.indexedStack(
@@ -41,27 +45,27 @@ GoRouter buildRouter() => GoRouter(
                 routes: [
                   GoRoute(
                     path: 'add',
-                    parentNavigatorKey: _rootKey,
+                    parentNavigatorKey: rootNavigatorKey,
                     builder: (_, _) => const AddReminderScreen(),
                   ),
                   GoRoute(
                     path: 'new',
-                    parentNavigatorKey: _rootKey,
+                    parentNavigatorKey: rootNavigatorKey,
                     builder: (_, _) => const EditorScreen(),
                   ),
                   GoRoute(
                     path: 'edit/:id',
-                    parentNavigatorKey: _rootKey,
+                    parentNavigatorKey: rootNavigatorKey,
                     builder: (_, state) => EditorScreen(reminderId: state.pathParameters['id']),
                   ),
                   GoRoute(
                     path: 'prayer',
-                    parentNavigatorKey: _rootKey,
+                    parentNavigatorKey: rootNavigatorKey,
                     builder: (_, _) => const PrayerScreen(),
                     routes: [
                       GoRoute(
                         path: 'words',
-                        parentNavigatorKey: _rootKey,
+                        parentNavigatorKey: rootNavigatorKey,
                         builder: (_, _) => const EditorScreen.prayerWords(),
                       ),
                     ],
@@ -70,7 +74,17 @@ GoRouter buildRouter() => GoRouter(
               ),
             ]),
             StatefulShellBranch(routes: [
-              GoRoute(path: Routes.settings, builder: (_, _) => const SettingsScreen()),
+              GoRoute(
+                path: Routes.settings,
+                builder: (_, _) => const SettingsScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'location',
+                    parentNavigatorKey: rootNavigatorKey,
+                    builder: (_, _) => const LocationScreen(),
+                  ),
+                ],
+              ),
             ]),
           ],
         ),

@@ -51,7 +51,7 @@ void main() {
     });
   });
 
-  group('migration v1 → v2', () {
+  group('migration v1 → v3', () {
     Future<void> createV1() async {
       final db = await databaseFactoryFfi.openDatabase(temp.path);
       await db.execute(File('test/data/fixtures/schema_v1.sql').readAsStringSync());
@@ -69,10 +69,10 @@ void main() {
       await db.close();
     }
 
-    test('keeps every reminder, clamps the old offset and reaches v2', () async {
+    test('keeps every reminder, clamps the old offset and reaches the current version', () async {
       await createV1();
       final db = (await temp.open()).db;
-      expect(await userVersion(db), 2);
+      expect(await userVersion(db), NiyahDatabase.version);
       final rows = {for (final r in await db.query('reminders')) r['id']: r};
       expect(rows.keys.toSet(), {'p', 't', 's', 'd'});
       expect(rows['p']!['offset_min'], 120);
@@ -85,13 +85,13 @@ void main() {
       expect(await db.query('sqlite_master', where: "type = 'index' AND name = 'idx_reminders_active'"), hasLength(1));
     });
 
-    test('the tables end up like a fresh v2 seed', () async {
+    test('the tables end up like a fresh seed', () async {
       await createV1();
       final migrated = await temp.open();
       final freshDir = await Directory.systemTemp.createTemp('niyah_fresh_');
       final fresh = await NiyahDatabase.open(factory: databaseFactoryFfi, path: '${freshDir.path}/fresh.db', loadSeed: loadSeed);
       try {
-        for (final table in ['reminders', 'templates', 'template_i18n', 'categories']) {
+        for (final table in ['reminders', 'templates', 'template_i18n', 'categories', 'cities']) {
           expect(await columns(migrated.db, table), await columns(fresh.db, table), reason: table);
         }
       } finally {
@@ -135,6 +135,37 @@ void main() {
       await db.execute('CREATE TABLE x (y)');
       await db.close();
       await expectLater(temp.open(), throwsStateError);
+    });
+  });
+
+  group('migration v2 → v3', () {
+    /// A v2 database: the current seed with the v2 `cities` table (no
+    /// `alt_names`, no rows) and one reminder.
+    Future<void> createV2() async {
+      final db = await temp.open();
+      await db.db.execute('DROP TABLE cities');
+      await db.db.execute('CREATE TABLE cities (id INTEGER PRIMARY KEY, name TEXT NOT NULL, ascii_name TEXT NOT NULL, '
+          'country TEXT NOT NULL, lat REAL NOT NULL, lng REAL NOT NULL, timezone TEXT NOT NULL, population INTEGER NOT NULL DEFAULT 0)');
+      final repo = SqliteReminderRepository(db);
+      await repo.init();
+      await repo.save(const ReminderItem(id: 'x', source: ReminderSource.personal, title: 't', schedule: TimeSchedule(LocalTime(8, 0))));
+      await db.db.execute('PRAGMA user_version = 2');
+      await db.close();
+    }
+
+    test('fills the cities, with their other names, and keeps the reminders', () async {
+      await createV2();
+      final db = (await temp.open()).db;
+      expect(await userVersion(db), NiyahDatabase.version);
+      expect((await db.rawQuery('SELECT COUNT(*) AS n FROM cities')).first['n'], greaterThan(30000));
+      final milan = (await db.query('cities', where: "ascii_name = 'Milan' AND country = 'IT'")).single;
+      expect(milan['timezone'], 'Europe/Rome');
+      expect(milan['alt_names'] as String, contains('|milano|'));
+      expect(await db.query('reminders', where: "id = 'x'"), hasLength(1));
+      expect(await db.query('sqlite_master', where: "type = 'index' AND name = 'idx_cities_ascii'"), hasLength(1));
+      // The seed copy used for the migration is gone and detached.
+      expect(File('${temp.dir.path}/niyah_seed_migration.db').existsSync(), isFalse);
+      expect((await db.rawQuery('PRAGMA database_list')).map((r) => r['name']), isNot(contains('seed')));
     });
   });
 }

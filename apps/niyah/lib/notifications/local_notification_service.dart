@@ -50,7 +50,7 @@ class LocalNotificationService implements NotificationService {
   @override
   ValueListenable<String?> get tappedPayload => _tapped;
 
-  /// Returns the tapped payload and clears it, so it is handled once.
+  @override
   String? takeTappedPayload() {
     final payload = _tapped.value;
     _tapped.value = null;

@@ -19,11 +19,11 @@ class NiyahDatabase {
 
   static const fileName = 'niyah.db';
   static const seedAsset = 'assets/db/niyah_seed.db';
-  static const version = 2;
+  static const version = 3;
 
   /// Tables whose rows come only from the seed: replaced from the bundled
   /// seed after a migration, so new or changed templates reach old installs.
-  static const seedTables = ['categories', 'category_i18n', 'templates', 'template_i18n'];
+  static const seedTables = ['categories', 'category_i18n', 'templates', 'template_i18n', 'cities'];
 
   /// [factory] and [path] default to sqflite's; tests pass the FFI factory and
   /// a temporary file. [loadSeed] defaults to the bundled asset.
@@ -71,30 +71,25 @@ class NiyahDatabase {
     final from = Sqflite.firstIntValue(await db.rawQuery('PRAGMA user_version')) ?? 0;
     if (from >= version) return;
     if (from < 1) throw StateError('${db.path} is not a MyNiyah database (user_version $from)');
-    final seed = await _readSeedTables(db.path, factory, loadSeed);
-    await db.transaction((txn) async {
-      if (from < 2) await _v1ToV2(txn);
-      for (final table in seedTables.reversed) {
-        await txn.delete(table);
-      }
-      for (final table in seedTables) {
-        for (final row in seed[table]!) {
-          await txn.insert(table, row);
-        }
-      }
-      await txn.execute('PRAGMA user_version = $version');
-    });
-  }
-
-  static Future<Map<String, List<Map<String, Object?>>>> _readSeedTables(
-      String dbPath, DatabaseFactory factory, SeedLoader loadSeed) async {
-    final tmp = File(p.join(p.dirname(dbPath), 'niyah_seed_migration.db'));
+    // The seed is attached, not read into memory: `cities` has ~34,000 rows.
+    final tmp = File(p.join(p.dirname(db.path), 'niyah_seed_migration.db'));
     await tmp.writeAsBytes(await loadSeed(), flush: true);
-    final seed = await factory.openDatabase(tmp.path, options: OpenDatabaseOptions(readOnly: true));
+    await db.execute('ATTACH DATABASE ? AS seed', [tmp.path]);
     try {
-      return {for (final t in seedTables) t: await seed.query(t)};
+      await db.transaction((txn) async {
+        if (from < 2) await _v1ToV2(txn);
+        if (from < 3) await _v2ToV3(txn);
+        for (final table in seedTables.reversed) {
+          await txn.delete(table);
+        }
+        for (final table in seedTables) {
+          final cols = [for (final c in await txn.rawQuery('PRAGMA main.table_info($table)')) c['name']].join(', ');
+          await txn.execute('INSERT INTO main.$table ($cols) SELECT $cols FROM seed.$table');
+        }
+        await txn.execute('PRAGMA user_version = $version');
+      });
     } finally {
-      await seed.close();
+      await db.execute('DETACH DATABASE seed');
       await tmp.delete();
     }
   }
@@ -148,5 +143,25 @@ CREATE TABLE reminders_v2 (
     await txn.execute("ALTER TABLE templates ADD COLUMN group_key TEXT "
         "CHECK (group_key IS NULL OR group_key IN ('prayer','daily','dhikr','weekly'))");
     await txn.execute('ALTER TABLE templates ADD COLUMN icon TEXT');
+  }
+
+  /// v2 → v3: other names of each city for the offline search. The table
+  /// holds seed rows only, so it is rebuilt (then refilled from the seed).
+  /// Keep it identical to `seed/schema.sql`.
+  static Future<void> _v2ToV3(Transaction txn) async {
+    await txn.execute('DROP TABLE IF EXISTS cities');
+    await txn.execute('''
+CREATE TABLE cities (
+  id         INTEGER PRIMARY KEY,
+  name       TEXT NOT NULL,
+  ascii_name TEXT NOT NULL,
+  country    TEXT NOT NULL,
+  lat        REAL NOT NULL,
+  lng        REAL NOT NULL,
+  timezone   TEXT NOT NULL,
+  population INTEGER NOT NULL DEFAULT 0,
+  alt_names  TEXT NOT NULL DEFAULT ''
+)''');
+    await txn.execute('CREATE INDEX idx_cities_ascii ON cities(ascii_name COLLATE NOCASE)');
   }
 }

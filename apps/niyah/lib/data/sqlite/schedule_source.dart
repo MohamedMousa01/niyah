@@ -37,6 +37,15 @@ class ScheduleSource extends ScheduleInputs {
   @override
   bool get prayerDuringQuiet => _settings.prayerDuringQuiet;
 
+  @override
+  core.QuietHours get quietHours => _settings.quietHours;
+
+  @override
+  DateTime? get pausedUntil => _settings.pausedUntil;
+
+  @override
+  core.PrayerSettings? get prayerSettings => _settings.prayerSettings;
+
   /// Active reminders, expanded with the settings' wake-up and bed times.
   Future<List<core.Reminder>> reminders() async {
     final rows = await _db.db.rawQuery(core.NiyahSql.activeReminders);

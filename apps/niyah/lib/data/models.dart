@@ -1,6 +1,6 @@
 import 'package:niyah_core/niyah_core.dart' show LocalTime, Prayer, DaysMask;
 
-export 'package:niyah_core/niyah_core.dart' show LocalTime, Prayer, DaysMask;
+export 'package:niyah_core/niyah_core.dart' show LocalTime, Prayer, DaysMask, QuietHours;
 
 /// Which list a reminder belongs to in "My reminders".
 enum ReminderSource { personal, template, prayer }
@@ -138,4 +138,67 @@ class PrayerDay {
   final DateTime date;
   final Map<Prayer, LocalTime> times;
   const PrayerDay(this.date, this.times);
+}
+
+/// Where prayer times are computed: a city of the offline list (table
+/// `cities`), or a one-time GPS fix named after the nearest city.
+class PrayerLocation {
+  /// City name as GeoNames writes it ("Milan").
+  final String name;
+
+  /// ISO 3166 alpha-2 ("IT"): picks the suggested calculation method.
+  final String country;
+  final double latitude;
+  final double longitude;
+
+  /// IANA time zone of the place ("Europe/Rome").
+  final String timezone;
+
+  /// Found with the phone's location rather than chosen from the list.
+  final bool fromGps;
+
+  const PrayerLocation({
+    required this.name,
+    required this.country,
+    required this.latitude,
+    required this.longitude,
+    required this.timezone,
+    this.fromGps = false,
+  });
+
+  Map<String, Object?> toJson() => {
+        'name': name,
+        'country': country,
+        'lat': latitude,
+        'lng': longitude,
+        'tz': timezone,
+        'gps': fromGps,
+      };
+
+  /// Null when [json] is not a complete location.
+  static PrayerLocation? fromJson(Object? json) {
+    if (json is! Map) return null;
+    final name = json['name'], country = json['country'], lat = json['lat'], lng = json['lng'], tz = json['tz'];
+    if (name is! String || country is! String || lat is! num || lng is! num || tz is! String) return null;
+    return PrayerLocation(
+      name: name,
+      country: country,
+      latitude: lat.toDouble(),
+      longitude: lng.toDouble(),
+      timezone: tz,
+      fromGps: json['gps'] == true,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is PrayerLocation &&
+      other.name == name &&
+      other.country == country &&
+      other.latitude == latitude &&
+      other.longitude == longitude &&
+      other.timezone == timezone &&
+      other.fromGps == fromGps;
+  @override
+  int get hashCode => Object.hash(name, country, latitude, longitude, timezone, fromGps);
 }

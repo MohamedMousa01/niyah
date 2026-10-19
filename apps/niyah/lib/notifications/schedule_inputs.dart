@@ -3,10 +3,7 @@ import 'package:niyah_core/niyah_core.dart';
 import '../data/defaults.dart';
 
 /// Everything [LocalNotificationService] needs to build the OS schedule.
-///
-/// The data layer implements it (SQLite in Phase 4). Getters with a body
-/// return the temporary defaults from `lib/data/defaults.dart`; override them
-/// once the matching setting exists.
+/// On a device: `ScheduleSource` (SQLite reminders + the settings).
 abstract class ScheduleInputs {
   /// Active, non-deleted reminders, **already expanded**: multi-prayer and
   /// wake/bed reminders arrive as plain core reminders with stable ids.
@@ -18,18 +15,14 @@ abstract class ScheduleInputs {
   /// Prayer reminders may ring during quiet hours.
   bool get prayerDuringQuiet;
 
-  QuietHours get quietHours => const QuietHours();
+  QuietHours get quietHours;
 
   /// Global pause (UTC instant); null = not paused.
-  DateTime? get pausedUntil => null;
+  DateTime? get pausedUntil;
 
-  /// Where and how prayer times are computed.
-  PrayerSettings get prayerSettings => const PrayerSettings(
-        latitude: Defaults.prayerLat,
-        longitude: Defaults.prayerLng,
-        method: Defaults.prayerMethod,
-        madhab: Defaults.asrMadhab,
-      );
+  /// Where and how prayer times are computed; null while no location is
+  /// set (prayer-relative reminders are then left out).
+  PrayerSettings? get prayerSettings;
 }
 
 /// Fixed inputs held in memory: tests and previews.
@@ -40,6 +33,7 @@ class InMemoryScheduleInputs extends ScheduleInputs {
     this.prayerDuringQuiet = Defaults.prayerDuringQuiet,
     this.quietHours = const QuietHours(),
     this.pausedUntil,
+    this.prayerSettings,
   })  : reminders = [...reminders],
         templates = {...templates};
 
@@ -56,6 +50,9 @@ class InMemoryScheduleInputs extends ScheduleInputs {
 
   @override
   DateTime? pausedUntil;
+
+  @override
+  PrayerSettings? prayerSettings;
 
   @override
   Future<List<Reminder>> plannerReminders() async =>

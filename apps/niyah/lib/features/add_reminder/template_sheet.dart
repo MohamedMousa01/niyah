@@ -19,15 +19,6 @@ Future<void> showTemplateSheet(BuildContext context, String templateId) async {
 /// from 45 min before to 60 min after adhan, in steps of 5.
 const _maxBefore = 45, _maxAfter = -60, _offsetStep = 5;
 
-/// Weekend time step of the anchor kind, and the first weekend time offered
-/// when there is none yet (weekday + 1 h).
-const _weekendStep = 15, _defaultWeekendShift = 60;
-
-LocalTime _shift(LocalTime t, int minutes) {
-  final m = (t.minutesOfDay + minutes) % (24 * 60);
-  return LocalTime(m ~/ 60, m % 60);
-}
-
 class _TemplateSheet extends StatefulWidget {
   const _TemplateSheet({required this.template});
 
@@ -45,9 +36,8 @@ class _TemplateSheetState extends State<_TemplateSheet> {
   /// its [AnchorSchedule] and edits the shared anchor times below).
   late Schedule _schedule;
 
-  late LocalTime _weekday;
-  late bool _weekendOn;
-  late LocalTime _weekend;
+  /// Wake-up or bedtime being edited (anchor kind only).
+  late AnchorDraft _anchor;
 
   bool _busy = false;
 
@@ -58,11 +48,7 @@ class _TemplateSheetState extends State<_TemplateSheet> {
     _added = s.reminders.byTemplate(widget.template.id);
     _schedule = _added?.schedule ?? widget.template.defaultSchedule;
     final anchor = _schedule is AnchorSchedule ? (_schedule as AnchorSchedule).anchor : Anchor.wake;
-    final anchors = s.settings.anchors;
-    _weekday = anchors.weekday(anchor);
-    final weekend = anchors.weekend(anchor);
-    _weekendOn = weekend != null && weekend != _weekday;
-    _weekend = weekend ?? _shift(_weekday, _defaultWeekendShift);
+    _anchor = AnchorDraft(s.settings.anchors, anchor);
   }
 
   bool get _valid => switch (_schedule) {
@@ -82,11 +68,7 @@ class _TemplateSheetState extends State<_TemplateSheet> {
       await s.notifications.ensurePermission();
       if (schedule is PrayerSchedule) await s.notifications.ensureExactAlarms();
     }
-    if (schedule is AnchorSchedule) {
-      await s.settings.setAnchors(
-        s.settings.anchors.withAnchor(schedule.anchor, _weekday, _weekendOn ? _weekend : null),
-      );
-    }
+    if (schedule is AnchorSchedule) await s.settings.setAnchors(_anchor.applyTo(s.settings.anchors));
     await s.reminders.save(
       added?.copyWith(schedule: schedule) ??
           ReminderItem(
@@ -126,7 +108,7 @@ class _TemplateSheetState extends State<_TemplateSheet> {
         QuoteBox(body: l.dQuoted(t.body)),
         switch (_schedule) {
           final TimeSchedule time => _timeFields(l, time),
-          final AnchorSchedule anchor => _anchorFields(l, anchor.anchor),
+          AnchorSchedule() => AnchorFields(draft: _anchor, onChanged: () => setState(() {})),
           final PrayerSchedule prayer => _prayerFields(l, prayer),
         },
         Padding(
@@ -158,49 +140,6 @@ class _TemplateSheetState extends State<_TemplateSheet> {
       onChanged: (v) => _edit<TimeSchedule>((d) => d.copyWith(daysMask: v)),
     ),
   ]);
-
-  Widget _anchorFields(AppLocalizations l, Anchor anchor) {
-    final c = context.niyah;
-    final wake = anchor == Anchor.wake;
-    return _Fields([
-      _Label(wake ? l.anchorWakeLabel : l.anchorSleepLabel),
-      TimeStepper(value: _weekday, onChanged: (v) => setState(() => _weekday = v)),
-      Text(wake ? l.anchorWakeNote : l.anchorSleepNote, style: NiyahText.sans(13, height: 1.5, color: c.text2)),
-      Column(
-        children: [
-          const RowDivider(),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: ExcludeSemantics(
-                  child: Text(
-                    l.differentOnWeekends,
-                    style: NiyahText.sans(15, weight: FontWeight.w600, color: c.text),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              NiyahSwitch(
-                value: _weekendOn,
-                semanticLabel: l.differentOnWeekends,
-                onChanged: (v) => setState(() => _weekendOn = v),
-              ),
-            ],
-          ),
-        ],
-      ),
-      if (_weekendOn)
-        ValueStepper(
-          label: l.weekendDays,
-          value: formatTime(_weekend),
-          decrementLabel: l.weekendEarlier,
-          incrementLabel: l.weekendLater,
-          onDecrement: () => setState(() => _weekend = _shift(_weekend, -_weekendStep)),
-          onIncrement: () => setState(() => _weekend = _shift(_weekend, _weekendStep)),
-        ),
-    ]);
-  }
 
   Widget _prayerFields(AppLocalizations l, PrayerSchedule prayer) {
     final offset = prayer.offsetMin;

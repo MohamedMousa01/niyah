@@ -25,7 +25,7 @@ void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({});
     os = FakeNotificationPlatform();
-    inputs = InMemoryScheduleInputs(reminders: [personal('daily'), ...allPrayers()]);
+    inputs = InMemoryScheduleInputs(prayerSettings: milanPrayers, reminders: [personal('daily'), ...allPrayers()]);
     timezone = 'Europe/Rome';
     clock = DateTime.utc(2026, 10, 19, 6);
   });

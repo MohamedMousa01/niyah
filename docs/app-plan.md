@@ -1,4 +1,4 @@
-# MyNiyah — Flutter app plan (Milestone 1: reminders flow)
+# MyNiyah — Flutter app plan (Milestone 1: reminders flow, Milestone 2: Settings)
 
 Status: approved scope, 19 Oct 2026. Source design: canvas **"MyNiyah App Design"**
 (claude.ai/artifact/4RzizNDXAvQpExM7zskMt2). Architecture reference: [architettura.md](architettura.md).
@@ -9,14 +9,14 @@ Status: approved scope, 19 Oct 2026. Source design: canvas **"MyNiyah App Design
 |---|---|
 | Build | Hand-written Flutter app in `apps/niyah/`, using `packages/niyah_core` by path. FlutterFlow is retired for the mobile app; `flutterflow/` is removed once its runtime code is ported. |
 | Scope | Only the designed screens: Home, My reminders, Add a reminder (+ setup sheet), Write your own, Edit reminder (+ delete sheet), Prayer reminders. Light + dark. |
-| Not in scope | Settings content, onboarding, Quran/Hadith/Dhikr content, struggle reminders, "Sto per…", Firebase, account sync. The Settings tab shows a simple placeholder. |
-| Languages | `it` + `en` via `gen-l10n` (device language, fallback `en`). Layout uses start/end everywhere so `ar`/`fr` can be added later. |
+| Not in scope | Onboarding, Quran/Hadith/Dhikr content, struggle reminders, "Sto per…", Firebase, account sync. (Settings arrived in milestone 2, §9.) |
+| Languages | `it` + `en` via `gen-l10n` (device language, fallback `en`; overridable in Settings since milestone 2). Layout uses start/end everywhere so `ar`/`fr` can be added later. |
 | Backend | None. SQLite seed + local notifications, fully offline. |
 | Platforms | Android (built and tested on this Windows machine) and iOS (configured, but needs a Mac to build). |
 
-### Defaults while Settings doesn't exist (temporary, kept in one file `lib/data/defaults.dart`)
-- Prayer location: Milan (45.4642, 9.1900), `Europe/Rome`, Muslim World League, Shafi'i Asr. Device timezone is used for everything else.
-- Quiet hours: off. Wake-up time 06:40 (weekends 08:00), bedtime 22:30.
+### First-run values (`lib/data/defaults.dart`, all editable in Settings since milestone 2)
+- Prayer location: **none** until the user picks a city or uses the phone's location; until then prayer times and prayer notifications wait, and Settings and the Prayer screen ask for a location. (Milestone 1 used Milan as a temporary default.) Method: the one usual in the location's country (`defaultMethodForCountry`), Shafi'i (standard) Asr. Device timezone is used for everything else.
+- Quiet hours: off (22:30 → 07:00 when switched on). Wake-up time 06:40 (weekends 08:00), bedtime 22:30.
 - Notification permission is requested **in context**: the first time the user adds or turns on a reminder (one system prompt, then only the "Open settings" row).
 
 ### Content-integrity rule kept from the repo
@@ -55,7 +55,7 @@ apps/niyah/
       sqlite/                 sqflite implementations, seed copy + migrations
     notifications/            plugin wrapper + reschedule service (ported from flutterflow/custom_actions)
     features/
-      home/  reminders/  add_reminder/  editor/  prayer/  settings/ (placeholder)
+      home/  reminders/  add_reminder/  editor/  prayer/  settings/
     l10n/app_en.arb, app_it.arb
   assets/db/niyah_seed.db     built by seed/build_seed.py (scripts/build_seed_asset.sh)
   assets/fonts/               Amiri, Plus Jakarta Sans (OFL, bundled — no runtime download)
@@ -72,7 +72,8 @@ Principles:
 |---|---|
 | `/` tab 1 | Home (`Main`) |
 | `/reminders` tab 2 | My reminders (`Reminders`) |
-| `/settings` tab 3 | placeholder |
+| `/settings` tab 3 | Settings (no artboard, §9) |
+| `/settings/location` | Prayer location: GPS once or offline city search |
 | `/reminders/add` | Add a reminder (`AddReminder`), setup sheet is a modal bottom sheet |
 | `/reminders/new` | Write your own (`Editor`, mode new) |
 | `/reminders/:id` | Edit reminder (`Editor`, mode edit, delete sheet) |
@@ -125,10 +126,33 @@ Swap fakes for SQLite in `main.dart`, run the end-to-end flow on the emulator, c
 ## 8. Status — 19 Oct 2026
 All five work packages are merged on `app/milestone-1`: 220 app tests, 68 core tests and 10 seed tests pass, and `flutter analyze` is clean. Every screen was checked against its artboard in the web preview (it/en, light/dark).
 
-Still open:
-- **Device checks (§6):** nothing has run on Android or iOS yet (no Android SDK or Mac on the dev machine). Pending: delivery, reboot restore, exact alarms, permission prompts, notification taps.
-- **Notification taps:** the payload is captured (`tappedPayload`) but there is no navigation yet. Expanded ids map back with `baseReminderId()`.
-- **Background reschedule** (WorkManager / BGAppRefresh): not ported; reschedule happens at launch, on every change, and on resume after 6 h.
-- **Prayer location** stays on `Defaults` until the Settings milestone. The city label is not localized ("Milan").
-- **`SectionLabel` with `trailing`** gives the trailing text only half the row; the Prayer screen works around it locally.
-- **Native review** of the new it/fr/ar template texts and UI strings.
+Still open (updated for milestone 2, §9):
+- **Device checks (§6):** nothing has run on Android or iOS yet (no Android SDK or Mac on the dev machine). Pending: delivery, reboot restore, exact alarms, permission prompts, notification taps (the navigation itself is covered by widget tests), the GPS permission flow and fix (`geolocator`, coarse location only), the v2 → v3 migration on a real install (it copies ~34,000 cities with `ATTACH`).
+- **Background reschedule** (WorkManager / BGAppRefresh): not ported; reschedule happens at launch, on every change, and on resume after 6 h. A pause that ends while the app is closed is fine (the planner already scheduled what follows it), but a long pause uses one-off notifications and needs the app opened within the 14-day window.
+- **City names are not localized:** GeoNames gives one name per city ("Milan"); the search also matches other Latin-script names ("Milano"), but the label shows the GeoNames name. Country is shown as its ISO code ("IT · Europe/Rome").
+- **iOS location prompt text** is English only (`NSLocationWhenInUseUsageDescription`, no `InfoPlist.strings` yet).
+- **Native review** of the new it/fr/ar template texts and UI strings, now including Settings and the Italian names of the calculation methods.
+- **GeoNames attribution (CC-BY 4.0)** must appear on an About page, which does not exist yet.
+
+Closed by milestone 2: Settings tab, prayer location (no more Milan default), notification-tap navigation, `SectionLabel` with `trailing`.
+
+## 9. Milestone 2 — Settings (19 Oct 2026, branch `app/milestone-2`)
+No artboard exists for Settings: it is built from the design system (`NiyahCard` rows, `SectionLabel`, `NiyahSwitch`, `SegmentedControl`, `TimeStepper`, `NiyahBottomSheet`), light and dark, it/en, checked at 200 % text.
+
+| Setting | Where it lives | Effect |
+|---|---|---|
+| Language (phone / English / Italiano) | `SettingsStore.languageCode` | `MaterialApp.locale`; notification texts and Android channel names follow it (`main.dart` re-inits the channels). |
+| Prayer location | `SettingsStore.location` (`PrayerLocation`: name, country, lat/lng, IANA time zone, `fromGps`) | GPS once (`geolocator`, coarse, rounded to 0.01°, named after the biggest city within 15 km) or offline search in the seed's `cities` table (GeoNames cities15000, also by other Latin names: `alt_names`). |
+| Calculation method | `SettingsStore.methodChoice` (null = suggested for the country) | Picking the suggested one stores null, so it follows a later change of location. Prayer times are computed by the `adhan` package in `niyah_core`. |
+| Asr | `SettingsStore.madhab` (`shafi` / `hanafi`) | |
+| Quiet hours | `SettingsStore.quietHours` (core `QuietHours`, mode `skip`) | Prayer reminders keep their own "during quiet hours" switch. |
+| Pause all | `SettingsStore.pausedUntil` (1 day, 3 days, 1 week, or `SettingsStore.pausedForever`) | Planner `pausedUntil`. |
+| My day | `SettingsStore.anchors` | Same editor as the wake/bed setup sheet (`AnchorFields`). |
+
+Every setter notifies; `main.dart` reschedules on each change. `CorePrayerRepository` and `ScheduleSource` read location, method, madhab, quiet hours and pause from the settings (`ScheduleInputs` has no defaults any more).
+
+Data changes: seed schema **v3** (`cities.alt_names`); the app migrates v2 → v3 by rebuilding `cities` and refilling every seed table from the bundled seed through `ATTACH` (no rows in memory). `scripts/build_seed_asset.sh cities15000.zip` now always builds the asset with cities (5 MB).
+
+Notification taps: `NiyahApp` listens to `NotificationService.tappedPayload` (also a tap that launched the app), maps `{"r": id}` back with `baseReminderId()` and opens personal → Editor, template → its setup sheet over My reminders, prayer → Prayer screen. The refresh notice and deleted reminders open nothing.
+
+Checks: `flutter analyze` clean; 280 app tests (220 before), 68 core tests and 10 seed tests pass. New widget tests cover Settings, the location screen and the sheets in it/en × light/dark × text scale 1.0/2.0, every setting, the no-location state, and notification-tap navigation. Checked by eye in the web preview (it, light/dark).
