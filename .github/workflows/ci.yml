@@ -60,3 +60,17 @@ jobs:
           java-version: "21"
       - run: npm ci
       - run: npm test
+
+  app:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/niyah
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
