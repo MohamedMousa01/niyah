@@ -97,6 +97,7 @@
   "saveChanges": "Salva modifiche",
   "addReminderCta": "Aggiungi promemoria",
   "removeFromMine": "Rimuovi dai miei promemoria",
+  "dQuoted": "«{text}»",
 
   "editorNewTitle": "Scrivi il tuo",
   "editorEditTitle": "Modifica promemoria",

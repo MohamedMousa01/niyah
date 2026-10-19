@@ -108,6 +108,8 @@
   "saveChanges": "Save changes",
   "addReminderCta": "Add reminder",
   "removeFromMine": "Remove from my reminders",
+  "dQuoted": "“{text}”",
+  "@dQuoted": {"description": "A template text in quotation marks.", "placeholders": {"text": {"type": "String"}}},
 
   "editorNewTitle": "Write your own",
   "editorEditTitle": "Edit reminder",
