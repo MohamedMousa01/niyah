@@ -19,6 +19,9 @@ class SectionLabel extends StatelessWidget {
   final EdgeInsetsGeometry padding;
   final double fontSize;
 
+  /// Widest share of the row the label takes when there is a [trailing].
+  static const maxLabelShare = 0.6;
+
   @override
   Widget build(BuildContext context) {
     final c = context.niyah;
@@ -30,22 +33,29 @@ class SectionLabel extends StatelessWidget {
       ),
     );
     if (trailing == null) return Padding(padding: padding, child: label);
+    // The label keeps its natural width (wrapping past [maxLabelShare] of
+    // the row); the trailing text gets all the rest, aligned to the end.
     return Padding(
       padding: padding,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.baseline,
-        textBaseline: TextBaseline.alphabetic,
-        children: [
-          Flexible(child: label),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              trailing!,
-              textAlign: TextAlign.end,
-              style: NiyahText.sans(12.5, color: c.text2),
+      child: LayoutBuilder(
+        builder: (context, constraints) => Row(
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: constraints.maxWidth * maxLabelShare),
+              child: label,
             ),
-          ),
-        ],
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                trailing!,
+                textAlign: TextAlign.end,
+                style: NiyahText.sans(12.5, color: c.text2),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

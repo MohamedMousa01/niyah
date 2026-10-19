@@ -78,4 +78,25 @@ void main() {
     await repo.setEnabled('prayer', false);
     expect((await source.load('en')).needsPrayerTimes, isFalse);
   });
+
+  test('quiet hours, pause and prayer settings come from the settings', () async {
+    final (_, source, settings) = await setUpSource();
+    expect(source.prayerSettings!.latitude, FakeSettingsStore.sampleLocation.latitude);
+    expect(source.prayerSettings!.method, 'muslim_world_league');
+    expect(source.quietHours.enabled, isFalse);
+    expect(source.pausedUntil, isNull);
+
+    final until = DateTime.utc(2026, 10, 25);
+    await settings.setQuietHours(const core.QuietHours(enabled: true, start: LocalTime(23, 0), end: LocalTime(6, 0)));
+    await settings.setPausedUntil(until);
+    await settings.setMadhab('hanafi');
+    await settings.setMethodChoice('karachi');
+    expect(source.quietHours.enabled, isTrue);
+    expect(source.quietHours.start, const LocalTime(23, 0));
+    expect(source.pausedUntil, until);
+    expect((source.prayerSettings!.method, source.prayerSettings!.madhab), ('karachi', 'hanafi'));
+
+    await settings.setLocation(null);
+    expect(source.prayerSettings, isNull);
+  });
 }

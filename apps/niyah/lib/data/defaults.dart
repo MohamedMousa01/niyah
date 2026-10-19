@@ -1,16 +1,10 @@
 import 'models.dart';
 
-/// Temporary values used until the Settings screen exists (docs/app-plan.md §1).
-/// Keep every such default here so it is easy to remove later.
+/// First-run values: what the settings hold until the user changes them in
+/// Settings, and the schedule of the prayer reminder when it is created.
+/// There is no default prayer location: prayer times wait until the user
+/// picks a city or uses the phone's location.
 class Defaults {
-  static const prayerCity = 'Milan';
-  static const prayerLat = 45.4642;
-  static const prayerLng = 9.1900;
-  static const prayerTimezone = 'Europe/Rome';
-  static const prayerMethod = 'muslim_world_league';
-  static const prayerMethodLabel = 'Muslim World League';
-  static const asrMadhab = 'shafi';
-
   static const anchors = AnchorTimes(
     wake: LocalTime(6, 40),
     wakeWeekend: LocalTime(8, 0),
@@ -23,4 +17,10 @@ class Defaults {
   );
 
   static const prayerDuringQuiet = true;
+
+  /// Asr: 'shafi' (standard: Shafi'i, Maliki, Hanbali) or 'hanafi'.
+  static const madhab = 'shafi';
+
+  /// Off, 22:30 → 07:00 when switched on.
+  static const quietHours = QuietHours();
 }

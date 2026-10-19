@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 
+import '../city_search.dart';
 import '../defaults.dart';
+import '../memory_settings_store.dart';
 import '../models.dart';
 import '../repositories.dart';
 
@@ -186,11 +188,19 @@ class FakeTemplateRepository implements TemplateRepository {
 }
 
 class FakePrayerRepository extends PrayerRepository {
+  /// Fixed sample times (the design's), shown while [settings] has a location.
+  FakePrayerRepository(this.settings) {
+    settings.addListener(notifyListeners);
+  }
+
+  final SettingsStore settings;
+
   @override
   Future<void> init() async {}
 
   @override
   PrayerDay? get today {
+    if (settings.location == null) return null;
     final now = DateTime.now();
     return PrayerDay(DateTime(now.year, now.month, now.day), const {
       Prayer.fajr: LocalTime(5, 58),
@@ -200,44 +210,76 @@ class FakePrayerRepository extends PrayerRepository {
       Prayer.isha: LocalTime(19, 45),
     });
   }
+}
+
+/// In-memory settings that start with [sampleLocation] (pass `location:
+/// null` for a first run without one).
+class FakeSettingsStore extends MemorySettingsStore {
+  FakeSettingsStore({super.location = sampleLocation});
+
+  static const sampleLocation = PrayerLocation(
+    name: 'Milan',
+    country: 'IT',
+    latitude: 45.4643,
+    longitude: 9.1895,
+    timezone: 'Europe/Rome',
+  );
+}
+
+/// A few cities, enough for the web preview and the widget tests.
+class FakeCityRepository implements CityRepository {
+  // (name, other names, country, lat, lng, time zone)
+  static const _rows = [
+    ('Milan', ['milano', 'mailand'], 'IT', 45.4643, 9.1895, 'Europe/Rome'),
+    ('Rome', ['roma'], 'IT', 41.8919, 12.5113, 'Europe/Rome'),
+    ('Turin', ['torino'], 'IT', 45.0705, 7.6868, 'Europe/Rome'),
+    ('Naples', ['napoli'], 'IT', 40.8522, 14.2681, 'Europe/Rome'),
+    ('Bologna', <String>[], 'IT', 44.4938, 11.3387, 'Europe/Rome'),
+    ('London', ['londra'], 'GB', 51.5085, -0.1257, 'Europe/London'),
+    ('Paris', ['parigi'], 'FR', 48.8534, 2.3488, 'Europe/Paris'),
+    ('Cairo', ['il cairo', 'al qahirah'], 'EG', 30.0626, 31.2497, 'Africa/Cairo'),
+    ('Mecca', ['la mecca', 'makkah'], 'SA', 21.4266, 39.8256, 'Asia/Riyadh'),
+    ('Istanbul', <String>[], 'TR', 41.0138, 28.9497, 'Europe/Istanbul'),
+    ('Casablanca', <String>[], 'MA', 33.5883, -7.6114, 'Africa/Casablanca'),
+    ('New York City', ['new york'], 'US', 40.7143, -74.006, 'America/New_York'),
+  ];
+
+  static PrayerLocation _location(int i) {
+    final r = _rows[i];
+    return PrayerLocation(name: r.$1, country: r.$3, latitude: r.$4, longitude: r.$5, timezone: r.$6);
+  }
 
   @override
-  String get locationLabel => '${Defaults.prayerCity} · ${Defaults.prayerMethodLabel}';
+  Future<List<PrayerLocation>> search(String query, {int limit = 20}) async {
+    final q = foldCityName(query);
+    if (q.isEmpty) return const [];
+    return [
+      for (var i = 0; i < _rows.length; i++)
+        if (foldCityName(_rows[i].$1).startsWith(q) || _rows[i].$2.any((n) => n.startsWith(q))) _location(i),
+    ].take(limit).toList();
+  }
 
   @override
-  (Prayer, LocalTime)? nextPrayer(DateTime now) {
-    final minutes = now.hour * 60 + now.minute;
-    for (final e in today!.times.entries) {
-      if (e.value.minutesOfDay > minutes) return (e.key, e.value);
-    }
-    return null;
+  Future<PrayerLocation?> nearest(double latitude, double longitude) async {
+    final best = closestCity([for (var i = 0; i < _rows.length; i++) _location(i)], latitude, longitude);
+    return best != null && distanceKm(latitude, longitude, best.latitude, best.longitude) < 300 ? best : null;
   }
 }
 
-class FakeSettingsStore extends SettingsStore {
-  AnchorTimes _anchors = Defaults.anchors;
-  bool _prayerDuringQuiet = Defaults.prayerDuringQuiet;
+/// Answers with [result] (a spot in Milan unless changed).
+class FakeLocationService implements LocationService {
+  PositionResult result = const PositionFound(45.4781, 9.2272);
+  int requests = 0;
+  int settingsOpened = 0;
 
   @override
-  Future<void> init() async {}
-
-  @override
-  AnchorTimes get anchors => _anchors;
-
-  @override
-  Future<void> setAnchors(AnchorTimes value) async {
-    _anchors = value;
-    notifyListeners();
+  Future<PositionResult> currentPosition() async {
+    requests++;
+    return result;
   }
 
   @override
-  bool get prayerDuringQuiet => _prayerDuringQuiet;
-
-  @override
-  Future<void> setPrayerDuringQuiet(bool value) async {
-    _prayerDuringQuiet = value;
-    notifyListeners();
-  }
+  Future<void> openAppSettings() async => settingsOpened++;
 }
 
 class FakeNotificationService implements NotificationService {
@@ -264,4 +306,11 @@ class FakeNotificationService implements NotificationService {
 
   @override
   final ValueNotifier<String?> tappedPayload = ValueNotifier(null);
+
+  @override
+  String? takeTappedPayload() {
+    final payload = tappedPayload.value;
+    tappedPayload.value = null;
+    return payload;
+  }
 }

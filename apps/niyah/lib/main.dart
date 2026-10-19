@@ -28,7 +28,16 @@ void _startBackground(AppServices s) {
   unawaited(notifications.init().then((_) => reschedule()));
   // Every change to reminders or settings rebuilds the OS schedule.
   s.reminders.addListener(reschedule);
-  s.settings.addListener(reschedule);
+  var language = s.settings.languageCode;
+  s.settings.addListener(() {
+    // A new app language renames the Android channels first (init), then
+    // the reschedule rewrites the pending texts.
+    if (s.settings.languageCode != language) {
+      language = s.settings.languageCode;
+      unawaited(notifications.init());
+    }
+    reschedule();
+  });
   // Back in the foreground: refresh the rolling window if it is getting old.
   if (notifications is LocalNotificationService) {
     AppLifecycleListener(onResume: () => unawaited(notifications.rescheduleIfStale()));

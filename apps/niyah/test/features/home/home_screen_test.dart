@@ -47,7 +47,7 @@ void main() {
     await tester.tap(find.text('Language, prayer times, quiet hours'));
     await tester.pumpAndSettle();
     expect(find.byType(SettingsScreen), findsOneWidget);
-    expect(find.text('Language, prayer times and quiet hours will be here soon.'), findsOneWidget);
+    expect(find.text('Prayer times, reminders and language.'), findsOneWidget);
   });
 
   testWidgets('nav bar marks the current tab as selected', (tester) async {

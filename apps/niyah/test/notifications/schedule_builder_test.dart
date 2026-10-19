@@ -80,7 +80,7 @@ void main() {
 
   group('buildSchedulePlan', () {
     test('fixed reminders become repeating OS entries', () async {
-      final p = await plan(InMemoryScheduleInputs(reminders: [
+      final p = await plan(InMemoryScheduleInputs(prayerSettings: milanPrayers, reminders: [
         personal('daily'),
         personal('weekly', days: 0x01 | 0x04 | 0x10), // Mon, Wed, Fri
       ]));
@@ -92,7 +92,7 @@ void main() {
     });
 
     test('templates use the texts of the active language', () async {
-      final inputs = InMemoryScheduleInputs(
+      final inputs = InMemoryScheduleInputs(prayerSettings: milanPrayers, 
         reminders: [template('t1', 'renew')],
         templates: {
           'en': {'renew': const TextPair('Renew', 'Renew your intention')},
@@ -104,7 +104,7 @@ void main() {
     });
 
     test('prayer reminders are one-offs with default texts and a refresh', () async {
-      final p = await plan(InMemoryScheduleInputs(reminders: allPrayers()));
+      final p = await plan(InMemoryScheduleInputs(prayerSettings: milanPrayers, reminders: allPrayers()));
       final prayers = p.notifications.where((n) => n.reminderId.startsWith('prayer:')).toList();
       // 14-day window: about 5 a day, all single occurrences.
       expect(prayers.length, inInclusiveRange(70, 75));
@@ -120,7 +120,7 @@ void main() {
 
     test('the iOS budget caps the plan and keeps a slot for the refresh', () async {
       final p = await plan(
-        InMemoryScheduleInputs(reminders: [personal('daily'), ...allPrayers()]),
+        InMemoryScheduleInputs(prayerSettings: milanPrayers, reminders: [personal('daily'), ...allPrayers()]),
         budget: 60,
       );
       expect(p.notifications, hasLength(60));
@@ -131,7 +131,7 @@ void main() {
 
     test('repeating reminders that do not fit are reported', () async {
       final p = await plan(
-        InMemoryScheduleInputs(reminders: [personal('a'), personal('b', days: 0x7E)]),
+        InMemoryScheduleInputs(prayerSettings: milanPrayers, reminders: [personal('a'), personal('b', days: 0x7E)]),
         budget: 3,
       );
       expect(p.notifications.map((n) => n.reminderId), ['a']);
@@ -141,12 +141,12 @@ void main() {
     test('quiet hours silence Fajr unless prayers may ring', () async {
       // Fajr in Milan in October is around 06:20, inside 22:30–07:00.
       const quiet = QuietHours(enabled: true);
-      final silent = await plan(InMemoryScheduleInputs(
+      final silent = await plan(InMemoryScheduleInputs(prayerSettings: milanPrayers, 
         reminders: [prayer(Prayer.fajr, offset: 0)],
         quietHours: quiet,
         prayerDuringQuiet: false,
       ));
-      final ring = await plan(InMemoryScheduleInputs(
+      final ring = await plan(InMemoryScheduleInputs(prayerSettings: milanPrayers, 
         reminders: [prayer(Prayer.fajr, offset: 0)],
         quietHours: quiet,
         prayerDuringQuiet: true,
@@ -157,10 +157,15 @@ void main() {
 
     test('a global pause holds everything back until it ends', () async {
       final until = now.add(const Duration(days: 3)).toUtc();
-      final p = await plan(InMemoryScheduleInputs(reminders: allPrayers(), pausedUntil: until));
+      final p = await plan(InMemoryScheduleInputs(prayerSettings: milanPrayers, reminders: allPrayers(), pausedUntil: until));
       final prayers = p.notifications.where((n) => n.reminderId.startsWith('prayer:'));
       expect(prayers, isNotEmpty);
       expect(prayers.every((n) => !n.fireAt.toUtc().isBefore(until)), isTrue);
+    });
+
+    test('without a prayer location, prayer reminders are left out (the rest still rings)', () async {
+      final p = await plan(InMemoryScheduleInputs(reminders: [personal('daily'), ...allPrayers()]));
+      expect(p.notifications.map((n) => n.reminderId).toSet(), {'daily'});
     });
   });
 }

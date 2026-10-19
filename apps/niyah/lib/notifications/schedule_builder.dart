@@ -13,7 +13,7 @@ import 'schedule_inputs.dart';
 /// ahead, plus margin for the last day and timezone edges).
 const prayerDaysAhead = 16;
 
-/// Device locale → a supported app locale (fallback English).
+/// App or device locale → a supported app locale (fallback English).
 AppLocalizations notificationLocalizations(Locale device) {
   final supported = AppLocalizations.supportedLocales.any((l) => l.languageCode == device.languageCode);
   return lookupAppLocalizations(Locale(supported ? device.languageCode : 'en'));
@@ -102,11 +102,13 @@ Future<SchedulePlan> buildSchedulePlan({
   final templates = await inputs.templateTexts(l10n.localeName);
 
   final prayerDays = <LocalDate, DayPrayerTimes>{};
-  if (reminders.any((r) => r.enabled && r.scheduleType == ScheduleType.prayer)) {
+  final prayerSettings = inputs.prayerSettings;
+  // Without a location there are no times: prayer reminders stay silent.
+  if (prayerSettings != null && reminders.any((r) => r.enabled && r.scheduleType == ScheduleType.prayer)) {
     // Computed in memory for the window. The instants depend only on the
     // coordinates; the device timezone keeps days and quiet hours local.
     final today = LocalDate.of(tz.TZDateTime.from(now, location));
-    for (final d in computePrayerDays(today, prayerDaysAhead, inputs.prayerSettings, location)) {
+    for (final d in computePrayerDays(today, prayerDaysAhead, prayerSettings, location)) {
       prayerDays[d.date] = d;
     }
   }

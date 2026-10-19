@@ -250,4 +250,36 @@ void main() {
       expect(tester.takeException(), isNull);
     }
   });
+
+  group('SectionLabel with trailing', () {
+    late Rect row;
+    Future<(Rect, Rect)> layout(WidgetTester tester, String label, String trailing, {double width = 358}) async {
+      await pumpWidgetIn(tester, SizedBox(width: width, child: SectionLabel(label, trailing: trailing, padding: EdgeInsets.zero)));
+      row = tester.getRect(find.byType(SectionLabel));
+      return (tester.getRect(find.text(label.toUpperCase())), tester.getRect(find.text(trailing)));
+    }
+
+    testWidgets('a short label leaves the rest of the row to the trailing text', (tester) async {
+      final (label, trailing) = await layout(tester, 'Today', 'Milan · Muslim World League');
+      // One line, more than half of the 358 px row, ending at the row's end.
+      expect(trailing.width, greaterThan(358 / 2));
+      expect(trailing.height, lessThan(20));
+      expect(trailing.right, closeTo(row.right, 0.5));
+      expect(label.right, lessThan(trailing.left));
+    });
+
+    testWidgets('a long label wraps at 60 % instead of pushing the trailing text out', (tester) async {
+      final (label, trailing) = await layout(tester, 'A very long section label that needs two lines', 'Milan');
+      expect(label.width, lessThanOrEqualTo(358 * SectionLabel.maxLabelShare));
+      expect(trailing.right, closeTo(row.right, 0.5));
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('both wrap at 200 % text without overflow', (tester) async {
+      tester.platformDispatcher.textScaleFactorTestValue = 2;
+      addTearDown(tester.platformDispatcher.clearAllTestValues);
+      await layout(tester, 'Prayer times today', 'Città di Castello · Egyptian General Authority of Survey', width: 300);
+      expect(tester.takeException(), isNull);
+    });
+  });
 }

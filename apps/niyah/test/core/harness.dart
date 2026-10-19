@@ -6,6 +6,7 @@ import 'package:niyah/app.dart';
 import 'package:niyah/app_scope.dart';
 import 'package:niyah/core/theme/niyah_theme.dart';
 import 'package:niyah/data/fake/fake_repositories.dart';
+import 'package:niyah/data/repositories.dart';
 import 'package:niyah/l10n/app_localizations.dart';
 
 /// Loads the bundled fonts so layout tests measure real glyphs.
@@ -107,14 +108,22 @@ class RecordingNotifications extends FakeNotificationService {
   Future<void> openSystemSettings() async => settingsOpened++;
 }
 
-/// [AppServices.fake] with a [RecordingNotifications] and optional reminders.
-AppServices fakeServices({RecordingNotifications? notifications, FakeReminderRepository? reminders}) {
-  final base = AppServices.fake();
+/// [AppServices.fake] with a [RecordingNotifications] and optional reminders,
+/// settings (e.g. `FakeSettingsStore(location: null)`) and location service.
+AppServices fakeServices({
+  RecordingNotifications? notifications,
+  FakeReminderRepository? reminders,
+  SettingsStore? settings,
+  LocationService? location,
+}) {
+  final base = AppServices.fake(settings: settings);
   return AppServices(
     reminders: reminders ?? base.reminders,
     templates: base.templates,
     prayers: base.prayers,
     settings: base.settings,
     notifications: notifications ?? RecordingNotifications(),
+    cities: base.cities,
+    location: location ?? base.location,
   );
 }

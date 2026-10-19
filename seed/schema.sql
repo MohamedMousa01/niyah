@@ -7,7 +7,7 @@
 -- v2: prayers_mask, anchor e offset_min con segno (reminders); group_key e icon
 -- (templates). I database creati in v1 li migra l'app
 -- (apps/niyah/lib/data/sqlite/niyah_database.dart): tieni le due definizioni uguali.
-PRAGMA user_version = 2;
+PRAGMA user_version = 3;
 
 -- ── Promemoria (tutti i tipi) ───────────────────────────────────────────────
 CREATE TABLE reminders (
@@ -174,7 +174,8 @@ CREATE TABLE cities (
   lat        REAL NOT NULL,
   lng        REAL NOT NULL,
   timezone   TEXT NOT NULL,
-  population INTEGER NOT NULL DEFAULT 0
+  population INTEGER NOT NULL DEFAULT 0,
+  alt_names  TEXT NOT NULL DEFAULT ''  -- altri nomi latini, minuscoli e senza accenti: '|milano|mailand|'
 );
 CREATE INDEX idx_cities_ascii ON cities(ascii_name COLLATE NOCASE);
 

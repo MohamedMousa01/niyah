@@ -1,6 +1,7 @@
 /// Every shared widget of the design system: `import '../../core/widgets/widgets.dart';`
 library;
 
+export 'anchor_fields.dart';
 export 'back_header.dart';
 export 'days_selector.dart';
 export 'geometric_ornament.dart';

@@ -112,3 +112,58 @@ String _anchorText(AppLocalizations l, Anchor anchor, AnchorTimes anchors) {
 /// [scheduleText] in the current locale.
 String scheduleLabel(BuildContext context, Schedule schedule, AnchorTimes anchors) =>
     scheduleText(AppLocalizations.of(context), schedule, anchors);
+
+/// The calculation methods offered in Settings (adhan `CalculationMethod`
+/// names), most used first. adhan's `other` (no angles) is left out.
+const calculationMethods = [
+  'muslim_world_league',
+  'umm_al_qura',
+  'egyptian',
+  'karachi',
+  'north_america',
+  'dubai',
+  'kuwait',
+  'qatar',
+  'singapore',
+  'turkey',
+  'tehran',
+  'moon_sighting_committee',
+];
+
+/// "Muslim World League"; the raw name for one this version doesn't know.
+String methodName(AppLocalizations l, String method) => switch (method) {
+  'muslim_world_league' => l.methodMuslimWorldLeague,
+  'egyptian' => l.methodEgyptian,
+  'karachi' => l.methodKarachi,
+  'umm_al_qura' => l.methodUmmAlQura,
+  'dubai' => l.methodDubai,
+  'moon_sighting_committee' => l.methodMoonSighting,
+  'north_america' => l.methodNorthAmerica,
+  'kuwait' => l.methodKuwait,
+  'qatar' => l.methodQatar,
+  'singapore' => l.methodSingapore,
+  'turkey' => l.methodTurkey,
+  'tehran' => l.methodTehran,
+  _ => method,
+};
+
+/// The place of a prayer location: "Milan", or "Near Milan" for a GPS fix.
+String placeName(AppLocalizations l, PrayerLocation location) =>
+    location.fromGps ? l.locationNear(location.name) : location.name;
+
+/// "Milan · Muslim World League" (null while no location is set).
+String? prayerLocationLabel(AppLocalizations l, PrayerLocation? location, String method) =>
+    location == null ? null : l.locationAndMethod(placeName(l, location), methodName(l, method));
+
+/// Wake-up or bedtime: "06:40", "06:40 · weekends 08:00".
+String anchorTimesLabel(AppLocalizations l, AnchorTimes anchors, Anchor anchor) {
+  final weekday = anchors.weekday(anchor);
+  final weekend = anchors.weekend(anchor);
+  final t = formatTime(weekday);
+  if (weekend == null || weekend == weekday) return t;
+  return '$t · ${l.scheduleWeekendsAt(formatTime(weekend))}';
+}
+
+/// "Tue, Oct 21, 09:00" / "mar 21 ott, 09:00".
+String formatDateTime(AppLocalizations l, DateTime local) =>
+    '${DateFormat.MMMEd(l.localeName).format(local)}, ${formatTime(LocalTime(local.hour, local.minute))}';

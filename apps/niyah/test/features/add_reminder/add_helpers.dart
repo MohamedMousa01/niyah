@@ -106,5 +106,7 @@ AppServices addServices({
     prayers: base.prayers,
     settings: base.settings,
     notifications: notifications ?? RecordingNotifications(),
+    cities: base.cities,
+    location: base.location,
   );
 }

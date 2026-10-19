@@ -4,6 +4,9 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
+    <!-- Prayer location: one coarse fix when the user taps "Use my location"
+         (geolocator). Never in the background, never sent anywhere. -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <application
         android:label="MyNiyah"
         android:name="${applicationName}"

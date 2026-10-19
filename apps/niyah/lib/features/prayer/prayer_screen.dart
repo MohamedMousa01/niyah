@@ -131,7 +131,7 @@ class _PrayerScreenState extends State<PrayerScreen> {
                       const SizedBox(height: 22),
                       _TodaySection(
                         day: s.prayers.today,
-                        location: s.prayers.locationLabel,
+                        location: prayerLocationLabel(l, s.settings.location, s.settings.method),
                         on: prayers,
                         remind: prayerTimingLabel(l, offset),
                         onToggle: _togglePrayer,
@@ -247,7 +247,9 @@ class _TodaySection extends StatelessWidget {
   });
 
   final PrayerDay? day;
-  final String location;
+
+  /// "Milan · Muslim World League"; null while no location is set.
+  final String? location;
   final Set<Prayer> on;
 
   /// Remind line of the prayers that are on ("10 min before").
@@ -261,27 +263,9 @@ class _TodaySection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // SectionLabel's own `trailing` only gets half of the row, so the
-        // location sits in its own Expanded here.
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              SectionLabel(l.prayerToday, padding: EdgeInsets.zero),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  location,
-                  textAlign: TextAlign.end,
-                  style: NiyahText.sans(12.5, color: context.niyah.text2),
-                ),
-              ),
-            ],
-          ),
-        ),
+        SectionLabel(l.prayerToday, trailing: location),
         const SizedBox(height: 10),
+        if (day == null) ...[const _NoLocationCard(), const SizedBox(height: 12)],
         NiyahCard(
           child: Column(
             children: [
@@ -380,6 +364,34 @@ class _PrayerRow extends StatelessWidget {
             NiyahSwitch(value: on, onChanged: onChanged, semanticLabel: l.prayerRemindMeFor(name)),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Shown instead of today's times while no prayer location is set.
+class _NoLocationCard extends StatelessWidget {
+  const _NoLocationCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.niyah;
+    final l = AppLocalizations.of(context);
+    return NiyahCard(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(l.prayerNoLocation, style: NiyahText.sans(15, weight: FontWeight.w600, color: c.text)),
+          const SizedBox(height: 4),
+          NiyahTextButton(
+            label: l.settingsSetLocation,
+            icon: NiyahIcons.arrow,
+            fontSize: 14.5,
+            center: false,
+            onPressed: () => context.push(Routes.location),
+          ),
+        ],
       ),
     );
   }

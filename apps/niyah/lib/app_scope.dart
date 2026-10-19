@@ -10,6 +10,8 @@ class AppServices {
   final PrayerRepository prayers;
   final SettingsStore settings;
   final NotificationService notifications;
+  final CityRepository cities;
+  final LocationService location;
 
   const AppServices({
     required this.reminders,
@@ -17,16 +19,24 @@ class AppServices {
     required this.prayers,
     required this.settings,
     required this.notifications,
+    required this.cities,
+    required this.location,
   });
 
-  /// In-memory services: widget tests and the web preview.
-  factory AppServices.fake() => AppServices(
-        reminders: FakeReminderRepository(),
-        templates: FakeTemplateRepository(),
-        prayers: FakePrayerRepository(),
-        settings: FakeSettingsStore(),
-        notifications: FakeNotificationService(),
-      );
+  /// In-memory services: widget tests and the web preview. [settings]
+  /// defaults to a [FakeSettingsStore] with a sample location.
+  factory AppServices.fake({SettingsStore? settings}) {
+    final s = settings ?? FakeSettingsStore();
+    return AppServices(
+      reminders: FakeReminderRepository(),
+      templates: FakeTemplateRepository(),
+      prayers: FakePrayerRepository(s),
+      settings: s,
+      notifications: FakeNotificationService(),
+      cities: FakeCityRepository(),
+      location: FakeLocationService(),
+    );
+  }
 
   Future<void> init() async {
     await Future.wait([reminders.init(), templates.init(), prayers.init(), settings.init()]);

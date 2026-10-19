@@ -1,20 +1,27 @@
+import 'dart:convert';
+
+import 'package:niyah_core/niyah_core.dart' show QuietMode;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../defaults.dart';
+import '../memory_settings_store.dart';
 import '../models.dart';
-import '../repositories.dart';
 
-/// [SettingsStore] in shared_preferences. Missing keys fall back to [Defaults].
-class PrefsSettingsStore extends SettingsStore {
+/// [SettingsStore] in shared_preferences. Missing keys keep the [Defaults].
+class PrefsSettingsStore extends MemorySettingsStore {
   late SharedPreferences _prefs;
-  AnchorTimes _anchors = Defaults.anchors;
-  bool _prayerDuringQuiet = Defaults.prayerDuringQuiet;
 
   static const _wake = 'anchors.wake';
   static const _wakeWeekend = 'anchors.wake_weekend';
   static const _sleep = 'anchors.sleep';
   static const _sleepWeekend = 'anchors.sleep_weekend';
   static const _prayerQuiet = 'prayer_during_quiet';
+  static const _language = 'language';
+  static const _location = 'prayer.location';
+  static const _method = 'prayer.method';
+  static const _madhab = 'prayer.madhab';
+  static const _quiet = 'quiet_hours';
+  static const _paused = 'paused_until';
 
   /// Stored for a weekend time set to "same as weekdays" (null), so it is
   /// not confused with a key that was never written.
@@ -30,17 +37,33 @@ class PrefsSettingsStore extends SettingsStore {
       return s == _sameAsWeekdays ? null : LocalTime.tryParse(s) ?? fallback;
     }
 
-    _anchors = AnchorTimes(
-      wake: LocalTime.tryParse(_prefs.getString(_wake)) ?? d.wake,
-      wakeWeekend: weekend(_wakeWeekend, d.wakeWeekend),
-      sleep: LocalTime.tryParse(_prefs.getString(_sleep)) ?? d.sleep,
-      sleepWeekend: weekend(_sleepWeekend, d.sleepWeekend),
+    Object? json(String key) {
+      try {
+        return jsonDecode(_prefs.getString(key) ?? 'null');
+      } on FormatException {
+        return null;
+      }
+    }
+
+    load(
+      anchors: AnchorTimes(
+        wake: LocalTime.tryParse(_prefs.getString(_wake)) ?? d.wake,
+        wakeWeekend: weekend(_wakeWeekend, d.wakeWeekend),
+        sleep: LocalTime.tryParse(_prefs.getString(_sleep)) ?? d.sleep,
+        sleepWeekend: weekend(_sleepWeekend, d.sleepWeekend),
+      ),
+      prayerDuringQuiet: _prefs.getBool(_prayerQuiet),
+      languageCode: _prefs.getString(_language),
+      location: PrayerLocation.fromJson(json(_location)),
+      methodChoice: _prefs.getString(_method),
+      madhab: _prefs.getString(_madhab),
+      quietHours: _prefs.containsKey(_quiet) ? QuietHours.fromJson(json(_quiet)) : null,
+      pausedUntil: DateTime.tryParse(_prefs.getString(_paused) ?? ''),
     );
-    _prayerDuringQuiet = _prefs.getBool(_prayerQuiet) ?? Defaults.prayerDuringQuiet;
   }
 
-  @override
-  AnchorTimes get anchors => _anchors;
+  Future<void> _setOrRemove(String key, String? value) =>
+      value == null ? _prefs.remove(key) : _prefs.setString(key, value);
 
   @override
   Future<void> setAnchors(AnchorTimes value) async {
@@ -50,17 +73,56 @@ class PrefsSettingsStore extends SettingsStore {
       _prefs.setString(_sleep, value.sleep.toString()),
       _prefs.setString(_sleepWeekend, value.sleepWeekend?.toString() ?? _sameAsWeekdays),
     ]);
-    _anchors = value;
-    notifyListeners();
+    await super.setAnchors(value);
   }
-
-  @override
-  bool get prayerDuringQuiet => _prayerDuringQuiet;
 
   @override
   Future<void> setPrayerDuringQuiet(bool value) async {
     await _prefs.setBool(_prayerQuiet, value);
-    _prayerDuringQuiet = value;
-    notifyListeners();
+    await super.setPrayerDuringQuiet(value);
+  }
+
+  @override
+  Future<void> setLanguageCode(String? value) async {
+    await _setOrRemove(_language, value);
+    await super.setLanguageCode(value);
+  }
+
+  @override
+  Future<void> setLocation(PrayerLocation? value) async {
+    await _setOrRemove(_location, value == null ? null : jsonEncode(value.toJson()));
+    await super.setLocation(value);
+  }
+
+  @override
+  Future<void> setMethodChoice(String? value) async {
+    await _setOrRemove(_method, value);
+    await super.setMethodChoice(value);
+  }
+
+  @override
+  Future<void> setMadhab(String value) async {
+    await _prefs.setString(_madhab, value);
+    await super.setMadhab(value);
+  }
+
+  @override
+  Future<void> setQuietHours(QuietHours value) async {
+    await _prefs.setString(
+      _quiet,
+      jsonEncode({
+        'enabled': value.enabled,
+        'start': value.start.toString(),
+        'end': value.end.toString(),
+        'mode': value.mode == QuietMode.shift ? 'shift' : 'skip',
+      }),
+    );
+    await super.setQuietHours(value);
+  }
+
+  @override
+  Future<void> setPausedUntil(DateTime? value) async {
+    await _setOrRemove(_paused, value?.toUtc().toIso8601String());
+    await super.setPausedUntil(value);
   }
 }

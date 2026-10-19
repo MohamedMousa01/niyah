@@ -19,6 +19,7 @@ import json
 import re
 import sqlite3
 import sys
+import unicodedata
 import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
@@ -26,7 +27,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 LANGS = ("it", "en", "ar", "fr")
 NOW = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 GROUPS = ("prayer", "daily", "dhikr", "weekly")
 _TIME = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
 
@@ -236,7 +237,7 @@ def import_geonames(db: sqlite3.Connection, path: Path) -> int:
     else:
         with path.open(encoding="utf-8") as f:
             rows = list(_parse_geonames(f))
-    db.executemany("INSERT OR REPLACE INTO cities VALUES (?,?,?,?,?,?,?,?)", rows)
+    db.executemany("INSERT OR REPLACE INTO cities VALUES (?,?,?,?,?,?,?,?,?)", rows)
     return len(rows)
 
 
@@ -248,7 +249,25 @@ def _parse_geonames(lines):
         geonameid, name, ascii_name = cols[0], cols[1], cols[2]
         lat, lng, country, population, tzname = cols[4], cols[5], cols[8], cols[14], cols[17]
         yield (int(geonameid), name, ascii_name or name, country, float(lat), float(lng), tzname,
-               int(population or 0))
+               int(population or 0), _alt_names(cols[3], {name, ascii_name}))
+
+
+def fold_name(s: str) -> str:
+    """Minuscolo e senza accenti: come l'app normalizza la ricerca ("Città" → "citta")."""
+    return "".join(c for c in unicodedata.normalize("NFKD", s) if not unicodedata.combining(c)).lower().strip()
+
+
+def _alt_names(alternates: str, own: set[str]) -> str:
+    """Nomi alternativi in alfabeto latino ("Milano", "Mailand" per Milan), per la
+    ricerca in italiano e nelle altre lingue: '|milano|mailand|' ('' se nessuno).
+    GeoNames non dice la lingua dei nomi, quindi si tengono tutti quelli latini."""
+    skip = {fold_name(n) for n in own}
+    names = set()
+    for a in alternates.split(","):
+        f = fold_name(a)
+        if f and f not in skip and len(f) <= 40 and f.isascii() and all(c.isalpha() or c in " -'." for c in f):
+            names.add(f)
+    return "|" + "|".join(sorted(names)) + "|" if names else ""
 
 
 def main(argv: list[str] | None = None) -> int:
