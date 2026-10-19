@@ -1,12 +1,12 @@
 // Niyah — logica pura condivisa (nessuna dipendenza da Flutter).
 //
-// Questo file è volutamente UNICO e autosufficiente: in FlutterFlow non si
-// possono importare pacchetti locali, quindi va incollato così com'è come file
-// di codice personalizzato (vedi flutterflow/README.md). Dipende solo da
-// `timezone` e `adhan`.
+// Questo file è volutamente UNICO e autosufficiente: l'app (apps/niyah) lo usa
+// come pacchetto locale e i test lo verificano fuori da Flutter. Dipende solo
+// da `timezone` e `adhan`.
 //
 // Contiene:
-//   1. Modelli (promemoria, orari, quiet hours, testi localizzati)
+//   1. Modelli (promemoria, orari, quiet hours, testi localizzati) ed
+//      espansione dei promemoria multi-preghiera e "al risveglio / prima di dormire"
 //   2. Orari di preghiera offline (adhan)
 //   3. Pianificatore delle notifiche "ibrido a budget" (architettura §6)
 //   4. Selezione dei contenuti senza ripetizioni ravvicinate
@@ -21,10 +21,9 @@ import 'dart:math';
 import 'package:adhan/adhan.dart' as adhan;
 import 'package:timezone/timezone.dart' as tz;
 
-const String kNiyahCoreVersion = '0.1.0';
+const String kNiyahCoreVersion = '0.2.0';
 
-/// Azione FlutterFlow "di servizio": serve solo perché FlutterFlow accetti
-/// questo file come custom action. Restituisce la versione della libreria.
+/// Versione della libreria (per diagnostica).
 Future<String> niyahCoreVersion() async => kNiyahCoreVersion;
 
 /// UUID v4 casuale per i promemoria creati sul dispositivo (anche offline).
@@ -49,9 +48,15 @@ Map<String, Object?> _asMap(Object? j) {
 
 enum ReminderKind { template, personal, struggle, content, prayer, event }
 
-enum ScheduleType { daily, weekly, once, window, prayer }
+/// `anchor` = al risveglio o prima di dormire: gli orari stanno nelle
+/// impostazioni ([DayAnchors]), non nel promemoria. Il pianificatore non lo
+/// conosce: va prima trasformato con [expandReminders].
+enum ScheduleType { daily, weekly, once, window, prayer, anchor }
 
 enum Prayer { fajr, dhuhr, asr, maghrib, isha }
+
+/// Momento della giornata dell'utente a cui si aggancia un promemoria `anchor`.
+enum AnchorKind { wake, sleep }
 
 enum QuietMode { skip, shift }
 
@@ -151,6 +156,32 @@ class DaysMask {
   static const all = 127;
   static bool includes(int mask, int weekday) => (mask >> (weekday - 1)) & 1 == 1;
   static List<int> weekdays(int mask) => [for (var w = 1; w <= 7; w++) if (includes(mask, w)) w];
+
+  /// Lunedì … venerdì.
+  static const weekdaysOnly = 31;
+
+  /// Sabato e domenica.
+  static const weekend = 96;
+}
+
+/// Maschera delle preghiere: bit 0 = Fajr … bit 4 = Isha. 31 = tutte e cinque.
+class PrayersMask {
+  static const all = 31;
+  static int of(Iterable<Prayer> prayers) => prayers.fold(0, (m, p) => m | (1 << p.index));
+  static List<Prayer> prayers(int mask) => [for (final p in Prayer.values) if ((mask >> p.index) & 1 == 1) p];
+}
+
+/// Orari di risveglio e di sonno dell'utente. Un orario del fine settimana
+/// null = uguale a quello dei giorni feriali.
+class DayAnchors {
+  final LocalTime wake;
+  final LocalTime? wakeWeekend;
+  final LocalTime sleep;
+  final LocalTime? sleepWeekend;
+  const DayAnchors({required this.wake, this.wakeWeekend, required this.sleep, this.sleepWeekend});
+
+  LocalTime weekday(AnchorKind a) => a == AnchorKind.wake ? wake : sleep;
+  LocalTime weekend(AnchorKind a) => (a == AnchorKind.wake ? wakeWeekend : sleepWeekend) ?? weekday(a);
 }
 
 /// Un promemoria come salvato nella tabella SQLite `reminders`
@@ -170,8 +201,10 @@ class Reminder {
   final LocalTime? windowEnd;
   final int timesPerDay;
   final int daysMask;
-  final Prayer? prayer;
-  final int offsetMin; // minuti PRIMA della preghiera (0 = all'orario)
+  final Prayer? prayer; // vecchie righe: una sola preghiera (usata se prayersMask è null)
+  final int? prayersMask; // bit 0 = Fajr … bit 4 = Isha (vedi PrayersMask)
+  final int offsetMin; // > 0 = minuti prima dell'adhan, 0 = all'adhan, < 0 = dopo
+  final AnchorKind? anchor; // solo per scheduleType = anchor
   final LocalDate startDate;
   final LocalDate? endDate;
   final bool enabled;
@@ -198,7 +231,9 @@ class Reminder {
     this.timesPerDay = 1,
     this.daysMask = DaysMask.all,
     this.prayer,
+    this.prayersMask,
     this.offsetMin = 0,
+    this.anchor,
     required this.startDate,
     this.endDate,
     this.enabled = true,
@@ -234,7 +269,9 @@ class Reminder {
       timesPerDay: (r['times_per_day'] as int?) ?? 1,
       daysMask: (r['days_mask'] as int?) ?? DaysMask.all,
       prayer: r['prayer'] == null ? null : _enumByName(Prayer.values, r['prayer'], Prayer.fajr),
+      prayersMask: r['prayers_mask'] as int?,
       offsetMin: (r['offset_min'] as int?) ?? 0,
+      anchor: r['anchor'] == null ? null : _enumByName(AnchorKind.values, r['anchor'], AnchorKind.wake),
       startDate: LocalDate.tryParse(r['start_date']) ?? const LocalDate(2000, 1, 1),
       endDate: LocalDate.tryParse(r['end_date']),
       enabled: b(r['enabled'], true),
@@ -263,11 +300,15 @@ class Reminder {
         if (timesPerDay < 1 || timesPerDay > 12) errors.add('error_times_per_day');
         break;
       case ScheduleType.prayer:
-        if (prayer == null) errors.add('error_prayer_required');
-        if (offsetMin < 0 || offsetMin > 120) errors.add('error_prayer_offset');
+        if (prayers.isEmpty) errors.add('error_prayer_required');
+        if (offsetMin < -60 || offsetMin > 120) errors.add('error_prayer_offset');
+        break;
+      case ScheduleType.anchor:
+        if (anchor == null) errors.add('error_anchor_required');
         break;
     }
-    if (scheduleType == ScheduleType.weekly && daysMask & DaysMask.all == 0) errors.add('error_days_required');
+    final needsDays = scheduleType == ScheduleType.weekly || scheduleType == ScheduleType.anchor;
+    if (needsDays && daysMask & DaysMask.all == 0) errors.add('error_days_required');
     if (endDate != null && endDate!.isBefore(startDate)) errors.add('error_end_before_start');
     final needsText = kind == ReminderKind.personal || kind == ReminderKind.struggle;
     if (needsText && (title ?? '').trim().isEmpty && (body ?? '').trim().isEmpty) {
@@ -275,6 +316,158 @@ class Reminder {
     }
     return errors;
   }
+
+  /// Le preghiere a cui si riferisce: dalla maschera, altrimenti dalla
+  /// vecchia colonna `prayer`.
+  List<Prayer> get prayers {
+    final mask = prayersMask;
+    if (mask != null) return PrayersMask.prayers(mask);
+    return prayer == null ? const [] : [prayer!];
+  }
+
+  /// true se il pianificatore non lo può usare così com'è: va prima passato
+  /// da [expandReminders].
+  bool get needsExpansion =>
+      scheduleType == ScheduleType.anchor || (scheduleType == ScheduleType.prayer && prayersMask != null);
+
+  /// Copia con alcuni campi cambiati. Un argomento null = campo invariato
+  /// (per azzerare un campo facoltativo serve un nuovo [Reminder]).
+  /// `hideOnLockScreen`, `channel` e `syncPolicy` restano quelli già calcolati,
+  /// salvo la regola fissa: un promemoria `struggle` è sempre `local_only`.
+  Reminder copyWith({
+    String? id,
+    ReminderKind? kind,
+    String? templateId,
+    String? categoryId,
+    String? title,
+    String? body,
+    String? contentType,
+    ScheduleType? scheduleType,
+    LocalTime? time,
+    LocalTime? windowStart,
+    LocalTime? windowEnd,
+    int? timesPerDay,
+    int? daysMask,
+    Prayer? prayer,
+    int? prayersMask,
+    int? offsetMin,
+    AnchorKind? anchor,
+    LocalDate? startDate,
+    LocalDate? endDate,
+    bool? enabled,
+    DateTime? pausedUntil,
+    bool? respectsQuietHours,
+    bool? hideOnLockScreen,
+    String? channel,
+    String? syncPolicy,
+    DateTime? updatedAt,
+    bool? deleted,
+  }) =>
+      Reminder(
+        id: id ?? this.id,
+        kind: kind ?? this.kind,
+        templateId: templateId ?? this.templateId,
+        categoryId: categoryId ?? this.categoryId,
+        title: title ?? this.title,
+        body: body ?? this.body,
+        contentType: contentType ?? this.contentType,
+        scheduleType: scheduleType ?? this.scheduleType,
+        time: time ?? this.time,
+        windowStart: windowStart ?? this.windowStart,
+        windowEnd: windowEnd ?? this.windowEnd,
+        timesPerDay: timesPerDay ?? this.timesPerDay,
+        daysMask: daysMask ?? this.daysMask,
+        prayer: prayer ?? this.prayer,
+        prayersMask: prayersMask ?? this.prayersMask,
+        offsetMin: offsetMin ?? this.offsetMin,
+        anchor: anchor ?? this.anchor,
+        startDate: startDate ?? this.startDate,
+        endDate: endDate ?? this.endDate,
+        enabled: enabled ?? this.enabled,
+        pausedUntil: pausedUntil ?? this.pausedUntil,
+        respectsQuietHours: respectsQuietHours ?? this.respectsQuietHours,
+        hideOnLockScreen: hideOnLockScreen ?? this.hideOnLockScreen,
+        channel: channel ?? this.channel,
+        syncPolicy: syncPolicy ?? this.syncPolicy,
+        updatedAt: updatedAt ?? this.updatedAt,
+        deleted: deleted ?? this.deleted,
+      );
+
+  /// Copia per [expandReminders]: id, orario e preghiera nuovi, maschera e
+  /// anchor azzerati; il resto (testi, canale, privacy, sync, date) identico.
+  Reminder _expanded(String id, {required ScheduleType scheduleType, Prayer? prayer, LocalTime? time, int? daysMask}) =>
+      Reminder(
+        id: id,
+        kind: kind,
+        templateId: templateId,
+        categoryId: categoryId,
+        title: title,
+        body: body,
+        contentType: contentType,
+        scheduleType: scheduleType,
+        time: time ?? this.time,
+        windowStart: windowStart,
+        windowEnd: windowEnd,
+        timesPerDay: timesPerDay,
+        daysMask: daysMask ?? this.daysMask,
+        prayer: prayer,
+        offsetMin: offsetMin,
+        startDate: startDate,
+        endDate: endDate,
+        enabled: enabled,
+        pausedUntil: pausedUntil,
+        respectsQuietHours: respectsQuietHours,
+        hideOnLockScreen: hideOnLockScreen,
+        channel: channel,
+        syncPolicy: syncPolicy,
+        updatedAt: updatedAt,
+        deleted: deleted,
+      );
+}
+
+/// Id del promemoria salvato a partire dall'id di un promemoria espanso
+/// ("abc:fajr" → "abc"). Serve per il payload delle notifiche toccate.
+String baseReminderId(String id) {
+  final i = id.indexOf(':');
+  return i < 0 ? id : id.substring(0, i);
+}
+
+/// Trasforma i promemoria salvati in promemoria che il pianificatore sa
+/// gestire, senza cambiare il pianificatore:
+/// - un promemoria su più preghiere (`prayersMask`) → uno per preghiera,
+///   id "<id>:fajr" … "<id>:isha";
+/// - un promemoria `anchor` → uno settimanale lun–ven all'orario feriale
+///   ("<id>:wd") e uno sab–dom all'orario del fine settimana ("<id>:we"),
+///   ciascuno intersecato con i giorni scelti (una parte senza giorni sparisce);
+/// - tutti gli altri passano invariati.
+/// Gli id sono stabili, quindi gli id delle notifiche (stableHash) restano
+/// gli stessi tra una riprogrammazione e l'altra: niente duplicati.
+List<Reminder> expandReminders(List<Reminder> reminders, DayAnchors anchors) {
+  final out = <Reminder>[];
+  for (final r in reminders) {
+    switch (r.scheduleType) {
+      case ScheduleType.prayer when r.prayersMask != null:
+        for (final p in r.prayers) {
+          out.add(r._expanded('${r.id}:${p.name}', scheduleType: ScheduleType.prayer, prayer: p));
+        }
+        break;
+      case ScheduleType.anchor:
+        final a = r.anchor;
+        if (a == null) break;
+        for (final (suffix, days, time) in [
+          ('wd', DaysMask.weekdaysOnly, anchors.weekday(a)),
+          ('we', DaysMask.weekend, anchors.weekend(a)),
+        ]) {
+          final mask = r.daysMask & days;
+          if (mask == 0) continue;
+          out.add(r._expanded('${r.id}:$suffix', scheduleType: ScheduleType.weekly, time: time, daysMask: mask));
+        }
+        break;
+      default:
+        out.add(r);
+    }
+  }
+  return out;
 }
 
 /// Fascia "Non disturbare". Può attraversare la mezzanotte (22:30 → 07:00).
@@ -324,6 +517,10 @@ class NotificationStrings {
 
   /// Es. "{prayer} tra {minutes} minuti" — segnaposti {prayer} e {minutes}.
   final String prayerBefore;
+
+  /// Es. "{minutes} minuti dopo {prayer}" — per offset negativi. Se manca si
+  /// usa [prayerAtTime] (mai un numero di minuti negativo).
+  final String? prayerAfter;
   final String quranTitle;
   final String hadithTitle;
   final String dhikrTitle;
@@ -342,6 +539,7 @@ class NotificationStrings {
     required this.prayerNames,
     required this.prayerAtTime,
     required this.prayerBefore,
+    this.prayerAfter,
     required this.quranTitle,
     required this.hadithTitle,
     required this.dhikrTitle,
@@ -360,6 +558,7 @@ class NotificationStrings {
         },
         prayerAtTime: j['prayerAtTime'] as String,
         prayerBefore: j['prayerBefore'] as String,
+        prayerAfter: j['prayerAfter'] as String?,
         quranTitle: j['quranTitle'] as String,
         hadithTitle: j['hadithTitle'] as String,
         dhikrTitle: j['dhikrTitle'] as String,
@@ -800,6 +999,7 @@ class NotificationPlanner {
 
     for (final r in reminders) {
       if (r.deleted || !r.enabled) continue;
+      if (r.needsExpansion) continue; // va prima passato da expandReminders
       if (r.validate().isNotEmpty) continue;
       if (r.endDate != null && r.endDate!.isBefore(today)) continue;
 
@@ -974,6 +1174,7 @@ class NotificationPlanner {
           if (pt != null) add(pt.subtract(Duration(minutes: r.offsetMin)), 0);
           break;
         case ScheduleType.once:
+        case ScheduleType.anchor: // mai qui: espanso prima da expandReminders
           break;
       }
     }
@@ -1018,11 +1219,16 @@ class NotificationPlanner {
     if (r.kind == ReminderKind.prayer) {
       final name = strings.prayerNames[r.prayer!] ?? r.prayer!.name;
       final title = (r.title ?? '').isNotEmpty ? r.title! : name;
-      final body = (r.body ?? '').isNotEmpty
-          ? r.body!
-          : (r.offsetMin == 0
-              ? strings.prayerAtTime.replaceAll('{prayer}', name)
-              : strings.prayerBefore.replaceAll('{prayer}', name).replaceAll('{minutes}', '${r.offsetMin}'));
+      final String body;
+      if ((r.body ?? '').isNotEmpty) {
+        body = r.body!;
+      } else if (r.offsetMin > 0) {
+        body = strings.prayerBefore.replaceAll('{prayer}', name).replaceAll('{minutes}', '${r.offsetMin}');
+      } else if (r.offsetMin < 0 && strings.prayerAfter != null) {
+        body = strings.prayerAfter!.replaceAll('{prayer}', name).replaceAll('{minutes}', '${-r.offsetMin}');
+      } else {
+        body = strings.prayerAtTime.replaceAll('{prayer}', name);
+      }
       return _build(r: r, repeat: RepeatKind.none, fireAt: o.at, title: title, body: body, key: o.key, occurrenceKey: o.key);
     }
     final text = _textFor(r);

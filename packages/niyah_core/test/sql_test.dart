@@ -66,6 +66,24 @@ void main() {
     expect(r.syncPolicy, 'cloud');
   });
 
+  test('promemoria v2: più preghiere, offset negativo, anchor', () {
+    db.execute("INSERT INTO reminders (id,kind,template_id,schedule_type,prayers_mask,offset_min,start_date,created_at,updated_at) "
+        "VALUES ('p','template','after_prayer','prayer',31,-15,'2026-01-01','x','2026-10-01T00:00:00Z')");
+    db.execute("INSERT INTO reminders (id,kind,title,schedule_type,anchor,start_date,created_at,updated_at) "
+        "VALUES ('w','personal','Titolo','anchor','wake','2026-01-01','x','2026-10-01T00:00:00Z')");
+    final rs = {for (final r in rows(db, NiyahSql.activeReminders).map(Reminder.fromRow)) r.id: r};
+    expect(rs['p']!.prayers, Prayer.values);
+    expect(rs['p']!.offsetMin, -15);
+    expect(rs['w']!.anchor, AnchorKind.wake);
+    expect(rs.values.every((r) => r.validate().isEmpty), isTrue);
+    for (final bad in [
+      "INSERT INTO reminders (id,kind,schedule_type,offset_min,start_date,created_at,updated_at) VALUES ('a','personal','prayer',-61,'2026-01-01','x','x')",
+      "INSERT INTO reminders (id,kind,schedule_type,anchor,start_date,created_at,updated_at) VALUES ('b','personal','anchor','noon','2026-01-01','x','x')",
+    ]) {
+      expect(() => db.execute(bad), throwsA(isA<SqliteException>()), reason: bad);
+    }
+  });
+
   test('recent_content si accorcia da solo a 50 righe e la query restituisce i più recenti', () {
     for (var i = 0; i < 60; i++) {
       db.execute('INSERT INTO recent_content VALUES (?, ?)', ['c$i', '2026-10-01T00:00:${i.toString().padLeft(2, '0')}Z']);
@@ -77,7 +95,8 @@ void main() {
   });
 
   test('testi dei modelli per lingua', () {
-    db.execute("INSERT INTO templates VALUES ('t1','work','suggested',NULL,'niyyah','{}',NULL,1,0,1,'x')");
+    db.execute("INSERT INTO templates (id,category_id,section,channel,default_schedule_json,updated_at,group_key,icon) "
+        "VALUES ('t1','work','suggested','niyyah','{}','x','daily','work')");
     db.execute("INSERT INTO template_i18n VALUES ('t1','it','Titolo','Testo'), ('t1','en','Title','Text')");
     expect(rows(db, NiyahSql.templateTexts, ['en']).single['title'], 'Title');
   });

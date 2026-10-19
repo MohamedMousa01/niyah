@@ -2,12 +2,49 @@
   "_note": [
     "Modelli di notifica iniziali. Sono inviti brevi e rispettosi, senza citazioni né affermazioni religiose.",
     "Un modello con requires_source = true richiama una pratica (digiuno del lunedì, al-Kahf…) e resta DISATTIVATO finché non viene collegato a un contenuto verificato (source_content_id).",
-    "Nessun modello è attivo per default sul dispositivo: l'utente li sceglie nell'onboarding o in Le mie notifiche.",
-    "Le traduzioni en/fr/ar vanno riviste da madrelingua."
+    "Nessun modello è attivo per default sul dispositivo: l'utente li sceglie in \"Aggiungi un promemoria\".",
+    "group = gruppo e filtro in \"Aggiungi un promemoria\" (prayer | daily | dhikr | weekly); null = non mostrato lì (quran_daily, hadith_daily). icon = chiave dell'icona nell'app. L'ordine del file è l'ordine sullo schermo.",
+    "schedule: daily/weekly con time (e days_mask, bit 0 = lunedì); prayer con prayers_mask (bit 0 = Fajr … bit 4 = Isha) e offset_min (> 0 prima dell'adhan, < 0 dopo); anchor con anchor = wake | sleep (orari nelle impostazioni).",
+    "Le traduzioni en/fr/ar vanno riviste da madrelingua.",
+    "DA RIVEDERE DA MADRELINGUA (nuovi nello schema v2): before_prayer, after_prayer, wake_up, before_sleep. I testi it/en vengono dall'app (FakeTemplateRepository), quelli fr/ar sono una prima proposta."
   ],
   "templates": [
     {
+      "id": "before_prayer", "category": "salah", "section": "suggested", "channel": "prayer",
+      "group": "prayer", "icon": "mosque",
+      "schedule": {"schedule_type": "prayer", "prayers_mask": 31, "offset_min": 10},
+      "texts": {
+        "it": {"title": "Prima di ogni preghiera", "body": "Prepara il cuore alla preghiera."},
+        "en": {"title": "Before each prayer", "body": "Prepare your heart for the prayer."},
+        "fr": {"title": "Avant chaque prière", "body": "Prépare ton cœur à la prière."},
+        "ar": {"title": "قبل كل صلاة", "body": "هيّئ قلبك للصلاة."}
+      }
+    },
+    {
+      "id": "after_prayer", "category": "adhkar_post_prayer", "section": "suggested", "channel": "dhikr",
+      "group": "prayer", "icon": "heart",
+      "schedule": {"schedule_type": "prayer", "prayers_mask": 31, "offset_min": -15},
+      "texts": {
+        "it": {"title": "Dopo ogni preghiera", "body": "Prenditi un momento per gli adhkar dopo la preghiera."},
+        "en": {"title": "After each prayer", "body": "Take a moment for the adhkar after prayer."},
+        "fr": {"title": "Après chaque prière", "body": "Prends un moment pour les adhkar après la prière."},
+        "ar": {"title": "بعد كل صلاة", "body": "خذ لحظة لأذكار ما بعد الصلاة."}
+      }
+    },
+    {
+      "id": "wake_up", "category": "niyyah_daily", "section": "suggested", "channel": "niyyah",
+      "group": "daily", "icon": "sunrise",
+      "schedule": {"schedule_type": "anchor", "anchor": "wake"},
+      "texts": {
+        "it": {"title": "Dopo il risveglio", "body": "Inizia la giornata con un'intenzione chiara."},
+        "en": {"title": "After waking up", "body": "Start your day with a clear intention."},
+        "fr": {"title": "Au réveil", "body": "Commence ta journée avec une intention claire."},
+        "ar": {"title": "بعد الاستيقاظ", "body": "ابدأ يومك بنية واضحة."}
+      }
+    },
+    {
       "id": "niyyah_renew_morning", "category": "niyyah_renew", "section": "suggested", "channel": "niyyah",
+      "group": "daily", "icon": "renew",
       "schedule": {"schedule_type": "daily", "time": "08:00"},
       "texts": {
         "it": {"title": "Rinnova la tua intenzione", "body": "Inizia la giornata cercando il compiacimento di Allah."},
@@ -18,6 +55,7 @@
     },
     {
       "id": "niyyah_work", "category": "niyyah_work", "section": "suggested", "channel": "niyyah",
+      "group": "daily", "icon": "work",
       "schedule": {"schedule_type": "weekly", "time": "09:00", "days_mask": 31},
       "suggest_for": ["worker", "both"],
       "texts": {
@@ -29,6 +67,7 @@
     },
     {
       "id": "niyyah_study", "category": "niyyah_study", "section": "suggested", "channel": "niyyah",
+      "group": "daily", "icon": "book",
       "schedule": {"schedule_type": "weekly", "time": "15:00", "days_mask": 31},
       "suggest_for": ["student", "both"],
       "texts": {
@@ -39,7 +78,19 @@
       }
     },
     {
+      "id": "kindness_today", "category": "kindness", "section": "suggested", "channel": "good_deeds",
+      "group": "daily", "icon": "heart",
+      "schedule": {"schedule_type": "daily", "time": "17:00"},
+      "texts": {
+        "it": {"title": "Un gesto gentile", "body": "C'è qualcuno a cui oggi puoi fare del bene?"},
+        "en": {"title": "A kind gesture", "body": "Is there someone you can do good to today?"},
+        "fr": {"title": "Un geste de bonté", "body": "Y a-t-il quelqu'un à qui tu peux faire du bien aujourd'hui ?"},
+        "ar": {"title": "لفتة طيبة", "body": "هل هناك من تستطيع أن تُحسن إليه اليوم؟"}
+      }
+    },
+    {
       "id": "niyyah_family", "category": "niyyah_family", "section": "suggested", "channel": "niyyah",
+      "group": "daily", "icon": "family",
       "schedule": {"schedule_type": "daily", "time": "19:00"},
       "texts": {
         "it": {"title": "Intenzione in famiglia", "body": "Vivi il tempo con la tua famiglia con una buona intenzione."},
@@ -49,7 +100,19 @@
       }
     },
     {
+      "id": "before_sleep", "category": "niyyah_daily", "section": "suggested", "channel": "niyyah",
+      "group": "daily", "icon": "bed",
+      "schedule": {"schedule_type": "anchor", "anchor": "sleep"},
+      "texts": {
+        "it": {"title": "Prima di dormire", "body": "Chiudi la giornata con un cuore sincero."},
+        "en": {"title": "Before sleeping", "body": "End your day with a sincere heart."},
+        "fr": {"title": "Avant de dormir", "body": "Termine ta journée avec un cœur sincère."},
+        "ar": {"title": "قبل النوم", "body": "اختم يومك بقلب صادق."}
+      }
+    },
+    {
       "id": "dhikr_pause", "category": "dhikr", "section": "suggested", "channel": "dhikr",
+      "group": "dhikr", "icon": "heart",
       "schedule": {"schedule_type": "daily", "time": "13:00"},
       "texts": {
         "it": {"title": "Un momento per il dhikr", "body": "Fermati un istante e ricorda Allah."},
@@ -60,7 +123,8 @@
     },
     {
       "id": "adhkar_morning", "category": "adhkar_morning", "section": "suggested", "channel": "dhikr",
-      "schedule": {"schedule_type": "daily", "time": "07:00"},
+      "group": "dhikr", "icon": "sunrise",
+      "schedule": {"schedule_type": "prayer", "prayers_mask": 1, "offset_min": -20},
       "texts": {
         "it": {"title": "Adhkar del mattino", "body": "È il momento degli adhkar del mattino."},
         "en": {"title": "Morning adhkar", "body": "It is time for the morning adhkar."},
@@ -70,7 +134,8 @@
     },
     {
       "id": "adhkar_evening", "category": "adhkar_evening", "section": "suggested", "channel": "dhikr",
-      "schedule": {"schedule_type": "daily", "time": "18:00"},
+      "group": "dhikr", "icon": "moon",
+      "schedule": {"schedule_type": "prayer", "prayers_mask": 4, "offset_min": -20},
       "texts": {
         "it": {"title": "Adhkar della sera", "body": "È il momento degli adhkar della sera."},
         "en": {"title": "Evening adhkar", "body": "It is time for the evening adhkar."},
@@ -79,17 +144,8 @@
       }
     },
     {
-      "id": "kindness_today", "category": "kindness", "section": "suggested", "channel": "good_deeds",
-      "schedule": {"schedule_type": "daily", "time": "17:00"},
-      "texts": {
-        "it": {"title": "Un gesto gentile", "body": "C'è qualcuno a cui oggi puoi fare del bene?"},
-        "en": {"title": "A kind gesture", "body": "Is there someone you can do good to today?"},
-        "fr": {"title": "Un geste de bonté", "body": "Y a-t-il quelqu'un à qui tu peux faire du bien aujourd'hui ?"},
-        "ar": {"title": "لفتة طيبة", "body": "هل هناك من تستطيع أن تُحسن إليه اليوم؟"}
-      }
-    },
-    {
       "id": "quran_daily", "category": "quran", "section": "content", "channel": "quran", "content_type": "quran",
+      "group": null, "icon": "book",
       "schedule": {"schedule_type": "window", "window_start": "09:00", "window_end": "21:00", "times_per_day": 1},
       "texts": {
         "it": {"title": "Qur'an", "body": "Un versetto durante la giornata."},
@@ -100,6 +156,7 @@
     },
     {
       "id": "hadith_daily", "category": "hadith", "section": "content", "channel": "hadith", "content_type": "hadith",
+      "group": null, "icon": "book",
       "schedule": {"schedule_type": "window", "window_start": "09:00", "window_end": "21:00", "times_per_day": 1},
       "texts": {
         "it": {"title": "Hadith", "body": "Un hadith durante la giornata."},
@@ -110,6 +167,7 @@
     },
     {
       "id": "monday_fast_eve", "category": "monday_fast", "section": "weekly", "channel": "niyyah", "requires_source": true,
+      "group": "weekly", "icon": "moon",
       "schedule": {"schedule_type": "weekly", "time": "20:00", "days_mask": 64},
       "texts": {
         "it": {"title": "Domani è lunedì", "body": "Promemoria per il digiuno volontario del lunedì."},
@@ -120,6 +178,7 @@
     },
     {
       "id": "thursday_fast_eve", "category": "thursday_fast", "section": "weekly", "channel": "niyyah", "requires_source": true,
+      "group": "weekly", "icon": "moon",
       "schedule": {"schedule_type": "weekly", "time": "20:00", "days_mask": 4},
       "texts": {
         "it": {"title": "Domani è giovedì", "body": "Promemoria per il digiuno volontario del giovedì."},
@@ -130,6 +189,7 @@
     },
     {
       "id": "jumuah_morning", "category": "jumuah", "section": "weekly", "channel": "islamic_events", "requires_source": true,
+      "group": "weekly", "icon": "mosque",
       "schedule": {"schedule_type": "weekly", "time": "10:00", "days_mask": 16},
       "texts": {
         "it": {"title": "Jumu'ah", "body": "Oggi è venerdì."},
@@ -140,6 +200,7 @@
     },
     {
       "id": "kahf_friday", "category": "kahf", "section": "weekly", "channel": "quran", "requires_source": true,
+      "group": "weekly", "icon": "book",
       "schedule": {"schedule_type": "weekly", "time": "09:00", "days_mask": 16},
       "texts": {
         "it": {"title": "Surah al-Kahf", "body": "Promemoria per la lettura di Surah al-Kahf."},
