@@ -1,10 +1,13 @@
--- Niyah — schema del database locale (SQLite), versione 1.
+-- Niyah — schema del database locale (SQLite), versione 2.
 -- Fonte di verità sul dispositivo (architettura §3). Le notifiche dell'OS sono
 -- solo una proiezione della tabella `reminders`: il motore le ricalcola sempre
 -- da qui e le confronta con le notifiche in attesa nell'OS (id stabili), per
 -- questo non serve una tabella di mappatura `scheduled_os`.
 
-PRAGMA user_version = 1;
+-- v2: prayers_mask, anchor e offset_min con segno (reminders); group_key e icon
+-- (templates). I database creati in v1 li migra l'app
+-- (apps/niyah/lib/data/sqlite/niyah_database.dart): tieni le due definizioni uguali.
+PRAGMA user_version = 2;
 
 -- ── Promemoria (tutti i tipi) ───────────────────────────────────────────────
 CREATE TABLE reminders (
@@ -15,14 +18,16 @@ CREATE TABLE reminders (
   title                TEXT,                       -- testo dell'utente: mai modificato dall'app
   body                 TEXT,
   content_type         TEXT CHECK (content_type IS NULL OR content_type IN ('quran','hadith','dhikr')),
-  schedule_type        TEXT NOT NULL CHECK (schedule_type IN ('daily','weekly','once','window','prayer')),
+  schedule_type        TEXT NOT NULL CHECK (schedule_type IN ('daily','weekly','once','window','prayer','anchor')),
   time                 TEXT,                       -- 'HH:mm'
   window_start         TEXT,
   window_end           TEXT,
   times_per_day        INTEGER NOT NULL DEFAULT 1,
   days_mask            INTEGER NOT NULL DEFAULT 127, -- bit 0 = lunedì … bit 6 = domenica
-  prayer               TEXT CHECK (prayer IS NULL OR prayer IN ('fajr','dhuhr','asr','maghrib','isha')),
-  offset_min           INTEGER NOT NULL DEFAULT 0,   -- minuti prima della preghiera
+  prayer               TEXT CHECK (prayer IS NULL OR prayer IN ('fajr','dhuhr','asr','maghrib','isha')), -- righe v1: una sola preghiera
+  prayers_mask         INTEGER,                    -- bit 0 = Fajr … bit 4 = Isha; se presente vince su `prayer`
+  offset_min           INTEGER NOT NULL DEFAULT 0 CHECK (offset_min BETWEEN -60 AND 120), -- > 0 = minuti prima dell'adhan, 0 = all'adhan, < 0 = dopo
+  anchor               TEXT CHECK (anchor IS NULL OR anchor IN ('wake','sleep')), -- per schedule_type = 'anchor' (orari nelle impostazioni)
   start_date           TEXT NOT NULL,              -- 'yyyy-MM-dd'
   end_date             TEXT,
   enabled              INTEGER NOT NULL DEFAULT 1,
@@ -124,7 +129,10 @@ CREATE TABLE templates (
   editable              INTEGER NOT NULL DEFAULT 1,
   seasonal              INTEGER NOT NULL DEFAULT 0,
   active                INTEGER NOT NULL DEFAULT 1,
-  updated_at            TEXT NOT NULL
+  updated_at            TEXT NOT NULL,
+  -- v2, in fondo come dopo ALTER TABLE ADD COLUMN nella migrazione:
+  group_key             TEXT CHECK (group_key IS NULL OR group_key IN ('prayer','daily','dhikr','weekly')), -- gruppo in "Aggiungi"; NULL = non mostrato
+  icon                  TEXT              -- chiave dell'icona nell'app
 );
 CREATE TABLE template_i18n (
   template_id TEXT NOT NULL REFERENCES templates(id) ON DELETE CASCADE,

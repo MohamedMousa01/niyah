@@ -414,7 +414,7 @@ void main() {
     });
   });
 
-  group('impostazioni da FlutterFlow (JSON)', () {
+  group('impostazioni (JSON)', () {
     test('QuietHours e PrayerSettings da JSON o stringa', () {
       final q = QuietHours.fromJson('{"enabled": true, "start": "23:00", "end": "06:30", "mode": "shift"}');
       expect(q.enabled, isTrue);

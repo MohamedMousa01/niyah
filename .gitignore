@@ -21,3 +21,6 @@ firebase/firestore-debug.log*
 
 # Lock file dei pacchetti Dart (libreria, non app)
 packages/**/pubspec.lock
+
+# Agent worktrees
+.claude/worktrees/

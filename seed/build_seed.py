@@ -16,6 +16,7 @@ from __future__ import annotations
 import argparse
 import io
 import json
+import re
 import sqlite3
 import sys
 import zipfile
@@ -25,6 +26,9 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 LANGS = ("it", "en", "ar", "fr")
 NOW = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+SCHEMA_VERSION = 2
+GROUPS = ("prayer", "daily", "dhikr", "weekly")
+_TIME = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
 
 
 class SeedError(Exception):
@@ -76,6 +80,37 @@ def validate_content_item(item: dict) -> list[str]:
     return errs
 
 
+def validate_template(t: dict) -> list[str]:
+    """Errori di gruppo, icona e orario predefinito di un modello. Lista vuota = valido."""
+    errs: list[str] = []
+    tid = t.get("id", "<senza id>")
+    if t.get("group") is not None and t["group"] not in GROUPS:
+        errs.append(f"modello {tid}: group non valido ({t['group']!r})")
+    if not t.get("icon"):
+        errs.append(f"modello {tid}: manca icon")
+    s = t.get("schedule") or {}
+    kind = s.get("schedule_type")
+    if kind in ("daily", "weekly"):
+        if not _TIME.match(str(s.get("time", ""))):
+            errs.append(f"modello {tid}: time non valido")
+        if kind == "weekly" and not 1 <= s.get("days_mask", 0) <= 127:
+            errs.append(f"modello {tid}: days_mask non valido")
+    elif kind == "prayer":
+        if not isinstance(s.get("prayers_mask"), int) or not 1 <= s["prayers_mask"] <= 31:
+            errs.append(f"modello {tid}: prayers_mask deve essere tra 1 e 31")
+        if not isinstance(s.get("offset_min"), int) or not -60 <= s["offset_min"] <= 120:
+            errs.append(f"modello {tid}: offset_min deve essere tra -60 e 120")
+    elif kind == "anchor":
+        if s.get("anchor") not in ("wake", "sleep"):
+            errs.append(f"modello {tid}: anchor deve essere wake o sleep")
+    elif kind == "window":
+        if not _TIME.match(str(s.get("window_start", ""))) or not _TIME.match(str(s.get("window_end", ""))):
+            errs.append(f"modello {tid}: finestra non valida")
+    else:
+        errs.append(f"modello {tid}: schedule_type non valido ({kind!r})")
+    return errs
+
+
 # ── Costruzione ─────────────────────────────────────────────────────────────
 
 def load_json(name: str) -> dict:
@@ -86,6 +121,14 @@ def build(out: Path, cities: Path | None = None, content: Path | None = None) ->
     if out.exists():
         out.unlink()
     db = sqlite3.connect(out)
+    try:
+        return _fill(db, cities, content)
+    finally:
+        # anche in caso di errore: su Windows un file aperto non si può cancellare
+        db.close()
+
+
+def _fill(db: sqlite3.Connection, cities: Path | None, content: Path | None) -> dict:
     db.execute("PRAGMA foreign_keys = ON")
     db.executescript((HERE / "schema.sql").read_text(encoding="utf-8"))
 
@@ -143,6 +186,9 @@ def build(out: Path, cities: Path | None = None, content: Path | None = None) ->
                 raise SeedError(f"modello {t['id']}: testo mancante in {l}")
         if t["category"] not in ids:
             raise SeedError(f"modello {t['id']}: categoria sconosciuta {t['category']}")
+        errors = validate_template(t)
+        if errors:
+            raise SeedError("; ".join(errors))
         source = t.get("source_content_id")
         if source and source not in content_ids:
             raise SeedError(f"modello {t['id']}: source_content_id {source} non presente tra i contenuti verificati")
@@ -150,9 +196,11 @@ def build(out: Path, cities: Path | None = None, content: Path | None = None) ->
         active = 0 if t.get("requires_source") and not source else 1
         if not active:
             disabled.append(t["id"])
-        db.execute("INSERT INTO templates VALUES (?,?,?,?,?,?,?,1,0,?,?)",
+        db.execute("INSERT INTO templates (id,category_id,section,content_type,channel,default_schedule_json,"
+                   "source_content_id,editable,seasonal,active,updated_at,group_key,icon) "
+                   "VALUES (?,?,?,?,?,?,?,1,0,?,?,?,?)",
                    (t["id"], t["category"], t["section"], t.get("content_type"), t["channel"],
-                    json.dumps(t["schedule"]), source, active, NOW))
+                    json.dumps(t["schedule"]), source, active, NOW, t.get("group"), t["icon"]))
         db.executemany("INSERT INTO template_i18n VALUES (?,?,?,?)",
                        [(t["id"], l, t["texts"][l]["title"], t["texts"][l]["body"]) for l in LANGS])
 
@@ -162,7 +210,9 @@ def build(out: Path, cities: Path | None = None, content: Path | None = None) ->
         n_cities = import_geonames(db, cities)
 
     db.execute("INSERT INTO sync_meta VALUES ('seed_built_at', ?)", (NOW,))
-    db.execute("INSERT INTO sync_meta VALUES ('schema_version', '1')")
+    db.execute("INSERT INTO sync_meta VALUES ('schema_version', ?)", (str(SCHEMA_VERSION),))
+    if db.execute("PRAGMA user_version").fetchone()[0] != SCHEMA_VERSION:
+        raise SeedError(f"schema.sql non imposta user_version = {SCHEMA_VERSION}")
     db.commit()
     check = db.execute("PRAGMA integrity_check").fetchone()[0]
     fk = db.execute("PRAGMA foreign_key_check").fetchall()
@@ -171,7 +221,6 @@ def build(out: Path, cities: Path | None = None, content: Path | None = None) ->
     counts = {t: db.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0]
               for t in ("categories", "topics", "templates", "content_items", "cities")}
     db.execute("VACUUM")
-    db.close()
     counts["templates_disabled_without_source"] = disabled
     counts["cities"] = n_cities
     return counts
