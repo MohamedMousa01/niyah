@@ -184,6 +184,8 @@
   "@notifPrayerAtTime": {"placeholders": {"prayer": {"type": "String"}}},
   "notifPrayerBefore": "{prayer} in {minutes} minutes",
   "@notifPrayerBefore": {"placeholders": {"prayer": {"type": "String"}, "minutes": {"type": "int"}}},
+  "notifPrayerAfter": "{minutes} minutes after {prayer}",
+  "@notifPrayerAfter": {"placeholders": {"prayer": {"type": "String"}, "minutes": {"type": "int"}}},
   "notifRefreshBody": "Open MyNiyah to keep receiving your reminders.",
   "notifPrivateBody": "Remember your intention",
   "channelPrayer": "Prayer",

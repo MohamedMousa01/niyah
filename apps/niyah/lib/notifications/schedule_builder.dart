@@ -48,6 +48,7 @@ NotificationStrings notificationStrings(AppLocalizations l) {
     prayerNames: {for (final p in Prayer.values) p: prayerName(l, p)},
     prayerAtTime: l.notifPrayerAtTime('{prayer}'),
     prayerBefore: l.notifPrayerBefore('{prayer}', sentinel).replaceAll('$sentinel', '{minutes}'),
+    prayerAfter: l.notifPrayerAfter('{prayer}', sentinel).replaceAll('$sentinel', '{minutes}'),
     quranTitle: l.channelQuran,
     hadithTitle: l.channelHadith,
     dhikrTitle: l.channelDhikr,
@@ -76,8 +77,7 @@ String prayerBody(AppLocalizations l, Prayer prayer, int offsetMin) {
 List<Reminder> prepareReminders(List<Reminder> reminders, AppLocalizations l, {required bool prayerDuringQuiet}) => [
       for (final r in reminders)
         if (r.kind == ReminderKind.prayer && r.prayer != null)
-          _copy(
-            r,
+          r.copyWith(
             body: (r.body ?? '').trim().isEmpty ? prayerBody(l, r.prayer!, r.offsetMin) : r.body,
             respectsQuietHours: !prayerDuringQuiet,
           )
@@ -124,31 +124,3 @@ Future<SchedulePlan> buildSchedulePlan({
   );
   return planner.plan(reminders, now, existing: existing);
 }
-
-Reminder _copy(Reminder r, {String? body, bool? respectsQuietHours}) => Reminder(
-      id: r.id,
-      kind: r.kind,
-      templateId: r.templateId,
-      categoryId: r.categoryId,
-      title: r.title,
-      body: body ?? r.body,
-      contentType: r.contentType,
-      scheduleType: r.scheduleType,
-      time: r.time,
-      windowStart: r.windowStart,
-      windowEnd: r.windowEnd,
-      timesPerDay: r.timesPerDay,
-      daysMask: r.daysMask,
-      prayer: r.prayer,
-      offsetMin: r.offsetMin,
-      startDate: r.startDate,
-      endDate: r.endDate,
-      enabled: r.enabled,
-      pausedUntil: r.pausedUntil,
-      respectsQuietHours: respectsQuietHours ?? r.respectsQuietHours,
-      hideOnLockScreen: r.hideOnLockScreen,
-      channel: r.channel,
-      syncPolicy: r.syncPolicy,
-      updatedAt: r.updatedAt,
-      deleted: r.deleted,
-    );

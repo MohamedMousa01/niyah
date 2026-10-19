@@ -1,5 +1,6 @@
 import 'package:niyah_core/niyah_core.dart' as core;
 
+import '../../notifications/schedule_inputs.dart';
 import '../repositories.dart';
 import 'niyah_database.dart';
 import 'schedule_codec.dart';
@@ -19,8 +20,9 @@ class ScheduleInput {
   bool get needsPrayerTimes => reminders.any((r) => r.scheduleType == core.ScheduleType.prayer);
 }
 
-/// Reads the reminders straight from SQLite for [core.NotificationPlanner].
-class ScheduleSource {
+/// Reads the reminders straight from SQLite for [core.NotificationPlanner]:
+/// the [ScheduleInputs] of the notification engine on a device.
+class ScheduleSource extends ScheduleInputs {
   ScheduleSource(this._db, this._settings);
 
   final NiyahDatabase _db;
@@ -28,6 +30,12 @@ class ScheduleSource {
 
   Future<ScheduleInput> load(String languageCode) async =>
       ScheduleInput(await reminders(), await templateTexts(languageCode));
+
+  @override
+  Future<List<core.Reminder>> plannerReminders() => reminders();
+
+  @override
+  bool get prayerDuringQuiet => _settings.prayerDuringQuiet;
 
   /// Active reminders, expanded with the settings' wake-up and bed times.
   Future<List<core.Reminder>> reminders() async {
@@ -41,6 +49,7 @@ class ScheduleSource {
   }
 
   /// Template texts in [languageCode], falling back to English.
+  @override
   Future<Map<String, core.TextPair>> templateTexts(String languageCode) async {
     const fallback = 'en';
     final rows = await _db.db.query('template_i18n', where: 'lang IN (?, ?)', whereArgs: [languageCode, fallback]);

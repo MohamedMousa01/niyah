@@ -162,6 +162,7 @@
 
   "notifPrayerAtTime": "È l'ora di {prayer}",
   "notifPrayerBefore": "{prayer} tra {minutes} minuti",
+  "notifPrayerAfter": "{minutes} minuti dopo {prayer}",
   "notifRefreshBody": "Apri MyNiyah per continuare a ricevere i promemoria.",
   "notifPrivateBody": "Ricorda la tua intenzione",
   "channelPrayer": "Preghiera",
