@@ -68,9 +68,54 @@ jobs:
         working-directory: apps/niyah
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
+          cache: true
       - run: flutter pub get
+      # lib/l10n/app_localizations*.dart is generated, not committed.
+      - run: flutter gen-l10n
       - run: flutter analyze
       - run: flutter test
+      - name: Fixed signing key (from secrets, or temporary)
+        env:
+          KEYSTORE_BASE64: ${{ secrets.NIYAH_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.NIYAH_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.NIYAH_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.NIYAH_KEY_PASSWORD }}
+        run: |
+          ks="$RUNNER_TEMP/niyah.jks"
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > "$ks"
+            {
+              echo "NIYAH_KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD"
+              echo "NIYAH_KEY_ALIAS=$KEY_ALIAS"
+              echo "NIYAH_KEY_PASSWORD=$KEY_PASSWORD"
+            } >> "$GITHUB_ENV"
+          else
+            # Without secrets (e.g. PRs from forks) the APK is signed with a throwaway key:
+            # it installs, but not over a build signed with a different key.
+            echo "::warning::NIYAH_KEYSTORE_* secrets missing: APK signed with a temporary key"
+            keytool -genkeypair -storetype PKCS12 -keystore "$ks" -alias niyah -keyalg RSA \
+              -keysize 2048 -validity 1 -storepass temporary -keypass temporary -dname "CN=Niyah temporary"
+            {
+              echo "NIYAH_KEYSTORE_PASSWORD=temporary"
+              echo "NIYAH_KEY_ALIAS=niyah"
+              echo "NIYAH_KEY_PASSWORD=temporary"
+            } >> "$GITHUB_ENV"
+          fi
+          echo "NIYAH_KEYSTORE_PATH=$ks" >> "$GITHUB_ENV"
+      - run: flutter build apk --release
+      - name: Fingerprint of the key that signed the APK
+        run: |
+          apksigner="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)/apksigner"
+          "$apksigner" verify --print-certs build/app/outputs/flutter-apk/app-release.apk | grep -E "DN:|SHA-256"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: niyah-apk
+          path: apps/niyah/build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 30
