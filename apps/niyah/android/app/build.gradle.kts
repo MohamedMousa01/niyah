@@ -4,6 +4,11 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// Fixed key for test APKs: CI rebuilds it from the GitHub secrets (see
+// .github/workflows/ci.yml). Without it the debug key is used, which differs per
+// machine and forces an uninstall before every update.
+val niyahKeystore = System.getenv("NIYAH_KEYSTORE_PATH")?.takeIf { it.isNotBlank() }?.let { file(it) }
+
 android {
     namespace = "app.niyah.niyah"
     // flutter_local_notifications needs compileSdk 35+ and core library desugaring.
@@ -31,11 +36,22 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        if (niyahKeystore != null) {
+            create("niyah") {
+                storeFile = niyahKeystore
+                storePassword = System.getenv("NIYAH_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("NIYAH_KEY_ALIAS")
+                keyPassword = System.getenv("NIYAH_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // The key never goes in the repository: it only comes from environment variables.
+            // Without NIYAH_KEYSTORE_PATH the debug key is used, so `flutter run --release` works.
+            signingConfig = signingConfigs.getByName(if (niyahKeystore != null) "niyah" else "debug")
         }
     }
 }
