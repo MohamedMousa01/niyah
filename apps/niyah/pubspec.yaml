@@ -32,3 +32,14 @@ dev_dependencies:
 flutter:
   generate: true
   uses-material-design: true
+
+  # OFL fonts from github.com/google/fonts (licences in assets/fonts/OFL-*.txt).
+  fonts:
+    - family: Amiri
+      fonts:
+        - asset: assets/fonts/Amiri-Regular.ttf
+        - asset: assets/fonts/Amiri-Bold.ttf
+          weight: 700
+    - family: PlusJakartaSans
+      fonts:
+        - asset: assets/fonts/PlusJakartaSans-VariableFont_wght.ttf

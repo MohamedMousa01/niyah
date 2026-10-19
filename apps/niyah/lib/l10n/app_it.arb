@@ -171,5 +171,7 @@
   "channelDhikr": "Dhikr",
   "channelGoodDeeds": "Buone azioni",
   "channelIslamicEvents": "Eventi islamici",
-  "channelPersonal": "Personali"
+  "channelPersonal": "Personali",
+
+  "cPrayerCardSummary": "{prayers} · {timing}"
 }
