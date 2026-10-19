@@ -121,3 +121,14 @@ Swap fakes for SQLite in `main.dart`, run the end-to-end flow on the emulator, c
 - **Python 3.12** to build the seed DB and run its tests (not installed on this machine).
 - Font files from the official `google/fonts` repository (OFL).
 - An Android emulator or device for Phase 4. A Mac only when iOS builds are needed.
+
+## 8. Status — 19 Oct 2026
+All five work packages are merged on `app/milestone-1`: 220 app tests, 68 core tests and 10 seed tests pass, and `flutter analyze` is clean. Every screen was checked against its artboard in the web preview (it/en, light/dark).
+
+Still open:
+- **Device checks (§6):** nothing has run on Android or iOS yet (no Android SDK or Mac on the dev machine). Pending: delivery, reboot restore, exact alarms, permission prompts, notification taps.
+- **Notification taps:** the payload is captured (`tappedPayload`) but there is no navigation yet. Expanded ids map back with `baseReminderId()`.
+- **Background reschedule** (WorkManager / BGAppRefresh): not ported; reschedule happens at launch, on every change, and on resume after 6 h.
+- **Prayer location** stays on `Defaults` until the Settings milestone. The city label is not localized ("Milan").
+- **`SectionLabel` with `trailing`** gives the trailing text only half the row; the Prayer screen works around it locally.
+- **Native review** of the new it/fr/ar template texts and UI strings.
