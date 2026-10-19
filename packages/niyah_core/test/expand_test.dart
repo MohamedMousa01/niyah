@@ -148,6 +148,40 @@ void main() {
       expect(anchorRem('a', AnchorKind.wake, days: 0).validate(), contains('error_days_required'));
     });
 
+    test('copyWith: senza argomenti copia tutto, con argomenti cambia solo quelli', () {
+      final r = Reminder(
+        id: 'r', kind: ReminderKind.template, templateId: 't', categoryId: 'c', title: 'T', body: 'B', contentType: 'dhikr',
+        scheduleType: ScheduleType.prayer, time: const LocalTime(8, 0), windowStart: const LocalTime(9, 0),
+        windowEnd: const LocalTime(21, 0), timesPerDay: 3, daysMask: 31, prayer: Prayer.asr, prayersMask: 5, offsetMin: -20,
+        anchor: AnchorKind.sleep, startDate: const LocalDate(2026, 1, 2), endDate: const LocalDate(2026, 12, 31), enabled: false,
+        pausedUntil: DateTime.utc(2026, 11), respectsQuietHours: false, hideOnLockScreen: true, channel: NiyahChannels.dhikr,
+        syncPolicy: 'local_only', updatedAt: DateTime.utc(2026, 10, 2), deleted: true,
+      );
+      List<Object?> fields(Reminder x) => [
+            x.id, x.kind, x.templateId, x.categoryId, x.title, x.body, x.contentType, x.scheduleType, x.time, x.windowStart,
+            x.windowEnd, x.timesPerDay, x.daysMask, x.prayer, x.prayersMask, x.offsetMin, x.anchor, x.startDate, x.endDate,
+            x.enabled, x.pausedUntil, x.respectsQuietHours, x.hideOnLockScreen, x.channel, x.syncPolicy, x.updatedAt, x.deleted,
+          ];
+      expect(fields(r.copyWith()), fields(r));
+
+      final c = r.copyWith(
+        id: 'n', kind: ReminderKind.personal, templateId: 't2', categoryId: 'c2', title: 'T2', body: 'B2', contentType: 'quran',
+        scheduleType: ScheduleType.anchor, time: const LocalTime(9, 30), windowStart: const LocalTime(10, 0),
+        windowEnd: const LocalTime(20, 0), timesPerDay: 2, daysMask: 96, prayer: Prayer.isha, prayersMask: 31, offsetMin: 15,
+        anchor: AnchorKind.wake, startDate: const LocalDate(2026, 2, 1), endDate: const LocalDate(2027, 1, 1), enabled: true,
+        pausedUntil: DateTime.utc(2026, 12), respectsQuietHours: true, hideOnLockScreen: false, channel: NiyahChannels.personal,
+        syncPolicy: 'cloud', updatedAt: DateTime.utc(2026, 10, 3), deleted: false,
+      );
+      expect(fields(c), [
+        'n', ReminderKind.personal, 't2', 'c2', 'T2', 'B2', 'quran', ScheduleType.anchor, const LocalTime(9, 30),
+        const LocalTime(10, 0), const LocalTime(20, 0), 2, 96, Prayer.isha, 31, 15, AnchorKind.wake, const LocalDate(2026, 2, 1),
+        const LocalDate(2027, 1, 1), true, DateTime.utc(2026, 12), true, false, NiyahChannels.personal, 'cloud',
+        DateTime.utc(2026, 10, 3), false,
+      ]);
+      // regola fissa: un promemoria struggle non diventa mai cloud
+      expect(r.copyWith(kind: ReminderKind.struggle, syncPolicy: 'cloud').syncPolicy, 'local_only');
+    });
+
     test('baseReminderId', () {
       expect(baseReminderId('abc:fajr'), 'abc');
       expect(baseReminderId('abc:wd'), 'abc');

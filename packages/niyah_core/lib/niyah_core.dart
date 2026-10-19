@@ -330,8 +330,71 @@ class Reminder {
   bool get needsExpansion =>
       scheduleType == ScheduleType.anchor || (scheduleType == ScheduleType.prayer && prayersMask != null);
 
-  /// Copia per [expandReminders]: cambia solo id e orario, il resto
-  /// (testi, canale, privacy, sync, date) resta identico.
+  /// Copia con alcuni campi cambiati. Un argomento null = campo invariato
+  /// (per azzerare un campo facoltativo serve un nuovo [Reminder]).
+  /// `hideOnLockScreen`, `channel` e `syncPolicy` restano quelli già calcolati,
+  /// salvo la regola fissa: un promemoria `struggle` è sempre `local_only`.
+  Reminder copyWith({
+    String? id,
+    ReminderKind? kind,
+    String? templateId,
+    String? categoryId,
+    String? title,
+    String? body,
+    String? contentType,
+    ScheduleType? scheduleType,
+    LocalTime? time,
+    LocalTime? windowStart,
+    LocalTime? windowEnd,
+    int? timesPerDay,
+    int? daysMask,
+    Prayer? prayer,
+    int? prayersMask,
+    int? offsetMin,
+    AnchorKind? anchor,
+    LocalDate? startDate,
+    LocalDate? endDate,
+    bool? enabled,
+    DateTime? pausedUntil,
+    bool? respectsQuietHours,
+    bool? hideOnLockScreen,
+    String? channel,
+    String? syncPolicy,
+    DateTime? updatedAt,
+    bool? deleted,
+  }) =>
+      Reminder(
+        id: id ?? this.id,
+        kind: kind ?? this.kind,
+        templateId: templateId ?? this.templateId,
+        categoryId: categoryId ?? this.categoryId,
+        title: title ?? this.title,
+        body: body ?? this.body,
+        contentType: contentType ?? this.contentType,
+        scheduleType: scheduleType ?? this.scheduleType,
+        time: time ?? this.time,
+        windowStart: windowStart ?? this.windowStart,
+        windowEnd: windowEnd ?? this.windowEnd,
+        timesPerDay: timesPerDay ?? this.timesPerDay,
+        daysMask: daysMask ?? this.daysMask,
+        prayer: prayer ?? this.prayer,
+        prayersMask: prayersMask ?? this.prayersMask,
+        offsetMin: offsetMin ?? this.offsetMin,
+        anchor: anchor ?? this.anchor,
+        startDate: startDate ?? this.startDate,
+        endDate: endDate ?? this.endDate,
+        enabled: enabled ?? this.enabled,
+        pausedUntil: pausedUntil ?? this.pausedUntil,
+        respectsQuietHours: respectsQuietHours ?? this.respectsQuietHours,
+        hideOnLockScreen: hideOnLockScreen ?? this.hideOnLockScreen,
+        channel: channel ?? this.channel,
+        syncPolicy: syncPolicy ?? this.syncPolicy,
+        updatedAt: updatedAt ?? this.updatedAt,
+        deleted: deleted ?? this.deleted,
+      );
+
+  /// Copia per [expandReminders]: id, orario e preghiera nuovi, maschera e
+  /// anchor azzerati; il resto (testi, canale, privacy, sync, date) identico.
   Reminder _expanded(String id, {required ScheduleType scheduleType, Prayer? prayer, LocalTime? time, int? daysMask}) =>
       Reminder(
         id: id,
