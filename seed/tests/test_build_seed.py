@@ -42,11 +42,11 @@ class BuildSeedTest(unittest.TestCase):
         # nessun contenuto religioso nel seed di base
         self.assertEqual(db.execute("SELECT COUNT(*) FROM content_i18n").fetchone()[0], 0)
 
-    def test_schema_v2(self):
+    def test_schema_v3(self):
         build_seed.build(self.out)
         db = sqlite3.connect(self.out)
-        self.assertEqual(db.execute("PRAGMA user_version").fetchone()[0], 2)
-        self.assertEqual(db.execute("SELECT value FROM sync_meta WHERE key='schema_version'").fetchone()[0], "2")
+        self.assertEqual(db.execute("PRAGMA user_version").fetchone()[0], 3)
+        self.assertEqual(db.execute("SELECT value FROM sync_meta WHERE key='schema_version'").fetchone()[0], "3")
         cols = {r[1] for r in db.execute("PRAGMA table_info(reminders)")}
         self.assertTrue({"prayers_mask", "anchor", "offset_min", "prayer"} <= cols)
         cols = [r[1] for r in db.execute("PRAGMA table_info(templates)")]
@@ -162,7 +162,7 @@ class BuildSeedTest(unittest.TestCase):
 
     def test_geonames_import(self):
         # due righe nel formato GeoNames (19 colonne), valori fittizi
-        row = ["1", "Città Test", "Citta Test", "", "41.9", "12.5", "P", "PPLC", "IT", "", "07", "", "", "",
+        row = ["1", "Città Test", "Citta Test", "Città Prova,Teststadt,Citta Test,Тест,Ville-Test", "41.9", "12.5", "P", "PPLC", "IT", "", "07", "", "", "",
                "100000", "", "20", "Europe/Rome", "2026-01-01"]
         bad = row[:5]
         path = self.tmp / "cities.txt"
@@ -171,6 +171,8 @@ class BuildSeedTest(unittest.TestCase):
         self.assertEqual(counts["cities"], 1)
         db = sqlite3.connect(self.out)
         self.assertEqual(db.execute("SELECT timezone FROM cities WHERE ascii_name LIKE 'citta%'").fetchone()[0], "Europe/Rome")
+        # altri nomi: solo latini, senza accenti, senza ripetere il nome stesso
+        self.assertEqual(db.execute("SELECT alt_names FROM cities").fetchone()[0], "|citta prova|teststadt|ville-test|")
 
 
 if __name__ == "__main__":

@@ -10,8 +10,8 @@ python3 -m unittest discover -s seed/tests                   # test (dati fittiz
 ```
 
 ## Cosa contiene
-- `schema.sql`: lo schema del database locale (architettura §3.2), versione 2 (`PRAGMA user_version = 2`). I vincoli impediscono di salvare un promemoria "peccato che sto combattendo" con sync cloud e un contenuto senza metadati di fonte. La v2 aggiunge `prayers_mask`, `anchor` (risveglio/sonno) e `offset_min` con segno ai promemoria, `group_key` e `icon` ai modelli; l'app migra i database v1 (`apps/niyah/lib/data/sqlite/niyah_database.dart`), quindi le due definizioni vanno tenute uguali.
-- `../scripts/build_seed_asset.sh`: ricostruisce il seed e lo copia in `apps/niyah/assets/db/niyah_seed.db` (senza città). Va rilanciato e committato dopo ogni modifica a schema o dati.
+- `schema.sql`: lo schema del database locale (architettura §3.2), versione 3 (`PRAGMA user_version = 3`). I vincoli impediscono di salvare un promemoria "peccato che sto combattendo" con sync cloud e un contenuto senza metadati di fonte. La v2 aggiunge `prayers_mask`, `anchor` (risveglio/sonno) e `offset_min` con segno ai promemoria, `group_key` e `icon` ai modelli; la v3 aggiunge `alt_names` alle città. L'app migra i database v1 e v2 (`apps/niyah/lib/data/sqlite/niyah_database.dart`), quindi le due definizioni vanno tenute uguali.
+- `../scripts/build_seed_asset.sh cities15000.zip`: ricostruisce il seed **con le città** e lo copia in `apps/niyah/assets/db/niyah_seed.db`. Va rilanciato e committato dopo ogni modifica a schema o dati.
 - `data/categories.json`, `data/topics.json`: nomi in it/en/fr/ar. Sono testi d'interfaccia; **le traduzioni en/fr/ar vanno riviste da madrelingua**.
 - `data/templates.json`: modelli di notifica brevi, senza citazioni, nell'ordine della schermata "Aggiungi un promemoria" (`group`, `icon`; `group: null` = non mostrato lì). I quattro modelli che richiamano una pratica (digiuno di lunedì e giovedì, venerdì, al-Kahf) restano **spenti** finché non vengono collegati a un contenuto verificato con `source_content_id`.
 
@@ -36,4 +36,6 @@ Formato di un elemento (stessi campi di Firestore):
 ```
 
 ## Città
-Le città vengono da GeoNames (`cities15000.zip`, https://download.geonames.org/export/dump/), licenza CC-BY 4.0: va citata nella pagina Informazioni dell'app. Il file non è nel repository: scaricalo e passalo con `--cities`.
+Le città vengono da GeoNames (`cities15000.zip`, https://download.geonames.org/export/dump/), licenza CC-BY 4.0: va citata nella pagina Informazioni dell'app. Il file non è nel repository: scaricalo e passalo con `--cities` (o a `scripts/build_seed_asset.sh`).
+
+Per ogni città si tengono anche gli altri nomi in alfabeto latino (`alt_names`, minuscoli e senza accenti, es. `|milano|mailand|` per Milan), così la ricerca trova "Milano" o "Il Cairo". GeoNames non indica la lingua di questi nomi, quindi si tengono tutti: circa 1,7 MB in più nel seed.
