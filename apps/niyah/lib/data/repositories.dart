@@ -74,6 +74,16 @@ abstract class NotificationService {
   /// Returns whether notifications are allowed.
   Future<bool> ensurePermission();
 
+  /// Asks for exact alarms (Android 12+) when prayer reminders are switched on.
+  /// Without it, notifications may arrive a few minutes late. Always true on iOS.
+  Future<bool> ensureExactAlarms();
+
+  /// Whether the OS currently lets the app show notifications.
+  Future<bool> areEnabled();
+
+  /// Opens the app's notification settings in the OS.
+  Future<void> openSystemSettings();
+
   /// Payload of the notification that opened the app, if any.
   ValueListenable<String?> get tappedPayload;
 }

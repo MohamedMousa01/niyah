@@ -61,9 +61,10 @@ class PrayerSchedule extends Schedule {
 
 /// A reminder as the UI sees it.
 ///
-/// For [ReminderSource.template] the [title]/[body] are the template texts in
-/// the current language (read-only). For [ReminderSource.prayer], null texts
-/// mean "use the default words".
+/// For [ReminderSource.template], always read the texts from
+/// [TemplateRepository.byId] in the current language: [title]/[body] may be
+/// null (the SQLite repository does not store them). For
+/// [ReminderSource.prayer], null texts mean "use the default words".
 class ReminderItem {
   final String id;
   final ReminderSource source;

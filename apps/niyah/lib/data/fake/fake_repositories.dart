@@ -254,5 +254,14 @@ class FakeNotificationService implements NotificationService {
   Future<bool> ensurePermission() async => permission;
 
   @override
+  Future<bool> ensureExactAlarms() async => true;
+
+  @override
+  Future<bool> areEnabled() async => permission;
+
+  @override
+  Future<void> openSystemSettings() async {}
+
+  @override
   final ValueNotifier<String?> tappedPayload = ValueNotifier(null);
 }
