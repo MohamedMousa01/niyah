@@ -13,7 +13,8 @@ import 'settings_sheets.dart';
 import 'settings_widgets.dart';
 
 /// Settings tab: prayer times (location, method, Asr), notifications (quiet
-/// hours, pause), "My day" (wake-up and bedtime) and the app language.
+/// hours, pause), "My day" (wake-up and bedtime), the theme and the app
+/// language.
 /// Every change is saved at once; `main.dart` reschedules on each one.
 ///
 /// No artboard exists for it: built from the design system's cards, rows,
@@ -46,6 +47,8 @@ class SettingsScreen extends StatelessWidget {
             _NotificationsSection(settings: settings),
             const SizedBox(height: 24),
             _DaySection(settings: settings),
+            const SizedBox(height: 24),
+            _AppearanceSection(settings: settings),
             const SizedBox(height: 24),
             _LanguageSection(settings: settings),
           ],
@@ -200,6 +203,37 @@ class _DaySection extends StatelessWidget {
           ],
         ),
         SettingsNote(l.settingsDayNote),
+      ],
+    );
+  }
+}
+
+/// Light (default) or dark, independent of the phone's setting.
+class _AppearanceSection extends StatelessWidget {
+  const _AppearanceSection({required this.settings});
+
+  final SettingsStore settings;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SectionLabel(l.settingsSectionAppearance),
+        const SizedBox(height: 10),
+        NiyahCard(
+          padding: const EdgeInsets.all(12),
+          child: SegmentedControl<AppTheme>(
+            values: AppTheme.values,
+            selected: settings.theme,
+            semanticLabel: l.settingsTheme,
+            labelOf: (t) => t == AppTheme.dark ? l.settingsThemeDark : l.settingsThemeLight,
+            onChanged: (t) {
+              if (t != settings.theme) settings.setTheme(t);
+            },
+          ),
+        ),
       ],
     );
   }

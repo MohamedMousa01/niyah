@@ -11,6 +11,7 @@ class MemorySettingsStore extends SettingsStore {
 
   AnchorTimes _anchors = Defaults.anchors;
   bool _prayerDuringQuiet = Defaults.prayerDuringQuiet;
+  AppTheme _theme = Defaults.theme;
   String? _languageCode;
   PrayerLocation? _location;
   String? _methodChoice;
@@ -25,6 +26,7 @@ class MemorySettingsStore extends SettingsStore {
   void load({
     AnchorTimes? anchors,
     bool? prayerDuringQuiet,
+    AppTheme? theme,
     String? languageCode,
     PrayerLocation? location,
     String? methodChoice,
@@ -34,6 +36,7 @@ class MemorySettingsStore extends SettingsStore {
   }) {
     _anchors = anchors ?? _anchors;
     _prayerDuringQuiet = prayerDuringQuiet ?? _prayerDuringQuiet;
+    _theme = theme ?? _theme;
     _languageCode = languageCode ?? _languageCode;
     _location = location ?? _location;
     _methodChoice = methodChoice ?? _methodChoice;
@@ -55,6 +58,14 @@ class MemorySettingsStore extends SettingsStore {
   @override
   Future<void> setPrayerDuringQuiet(bool value) async {
     _prayerDuringQuiet = value;
+    notifyListeners();
+  }
+
+  @override
+  AppTheme get theme => _theme;
+  @override
+  Future<void> setTheme(AppTheme value) async {
+    _theme = value;
     notifyListeners();
   }
 

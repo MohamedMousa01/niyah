@@ -16,6 +16,7 @@ class PrefsSettingsStore extends MemorySettingsStore {
   static const _sleep = 'anchors.sleep';
   static const _sleepWeekend = 'anchors.sleep_weekend';
   static const _prayerQuiet = 'prayer_during_quiet';
+  static const _theme = 'theme';
   static const _language = 'language';
   static const _location = 'prayer.location';
   static const _method = 'prayer.method';
@@ -53,6 +54,7 @@ class PrefsSettingsStore extends MemorySettingsStore {
         sleepWeekend: weekend(_sleepWeekend, d.sleepWeekend),
       ),
       prayerDuringQuiet: _prefs.getBool(_prayerQuiet),
+      theme: AppTheme.values.asNameMap()[_prefs.getString(_theme)],
       languageCode: _prefs.getString(_language),
       location: PrayerLocation.fromJson(json(_location)),
       methodChoice: _prefs.getString(_method),
@@ -80,6 +82,12 @@ class PrefsSettingsStore extends MemorySettingsStore {
   Future<void> setPrayerDuringQuiet(bool value) async {
     await _prefs.setBool(_prayerQuiet, value);
     await super.setPrayerDuringQuiet(value);
+  }
+
+  @override
+  Future<void> setTheme(AppTheme value) async {
+    await _prefs.setString(_theme, value.name);
+    await super.setTheme(value);
   }
 
   @override

@@ -23,6 +23,7 @@ void main() {
       expect(s.anchors.sleep, Defaults.anchors.sleep);
       expect(s.anchors.sleepWeekend, isNull);
       expect(s.prayerDuringQuiet, Defaults.prayerDuringQuiet);
+      expect(s.theme, AppTheme.light);
       expect(s.languageCode, isNull);
       expect(s.location, isNull);
       expect(s.prayerSettings, isNull);
@@ -51,12 +52,13 @@ void main() {
       expect(again.prayerDuringQuiet, isFalse);
     });
 
-    test('language, location, method, madhab, quiet hours and pause persist', () async {
+    test('theme, language, location, method, madhab, quiet hours and pause persist', () async {
       final s = PrefsSettingsStore();
       await s.init();
       var n = 0;
       s.addListener(() => n++);
       final until = DateTime.utc(2026, 10, 21, 7, 0);
+      await s.setTheme(AppTheme.dark);
       await s.setLanguageCode('it');
       await s.setLocation(const PrayerLocation(
         name: 'Milan', country: 'IT', latitude: 45.48, longitude: 9.23, timezone: 'Europe/Rome', fromGps: true));
@@ -64,10 +66,11 @@ void main() {
       await s.setMadhab('hanafi');
       await s.setQuietHours(const QuietHours(enabled: true, start: LocalTime(23, 0), end: LocalTime(6, 15)));
       await s.setPausedUntil(until);
-      expect(n, 6);
+      expect(n, 7);
 
       final again = PrefsSettingsStore();
       await again.init();
+      expect(again.theme, AppTheme.dark);
       expect(again.languageCode, 'it');
       expect(again.location, s.location);
       expect(again.location!.fromGps, isTrue);

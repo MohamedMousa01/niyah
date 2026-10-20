@@ -6,6 +6,7 @@ import 'package:niyah/app.dart';
 import 'package:niyah/app_scope.dart';
 import 'package:niyah/core/theme/niyah_theme.dart';
 import 'package:niyah/data/fake/fake_repositories.dart';
+import 'package:niyah/data/models.dart';
 import 'package:niyah/data/repositories.dart';
 import 'package:niyah/l10n/app_localizations.dart';
 
@@ -44,6 +45,8 @@ void setPhone(
 }
 
 /// Pumps the whole app (real router and shell) on in-memory services.
+/// [dark] picks the Dark theme in the app's settings (the app does not
+/// follow the phone) and also sets the phone to dark.
 Future<AppServices> pumpApp(
   WidgetTester tester, {
   AppServices? services,
@@ -54,6 +57,7 @@ Future<AppServices> pumpApp(
   setPhone(tester, lang: lang, dark: dark, textScale: textScale);
   final s = services ?? AppServices.fake();
   await s.init();
+  if (dark) await s.settings.setTheme(AppTheme.dark);
   await tester.pumpWidget(NiyahApp(services: s));
   await tester.pumpAndSettle();
   return s;

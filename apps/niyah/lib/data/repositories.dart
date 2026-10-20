@@ -122,6 +122,10 @@ abstract class SettingsStore extends ChangeNotifier {
   bool get prayerDuringQuiet;
   Future<void> setPrayerDuringQuiet(bool value);
 
+  /// Light or dark look of the app (independent of the phone's setting).
+  AppTheme get theme;
+  Future<void> setTheme(AppTheme value);
+
   /// App language ('en', 'it'); null = the phone's language.
   String? get languageCode;
   Future<void> setLanguageCode(String? value);

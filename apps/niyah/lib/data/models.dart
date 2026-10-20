@@ -5,6 +5,9 @@ export 'package:niyah_core/niyah_core.dart' show LocalTime, Prayer, DaysMask, Qu
 /// Which list a reminder belongs to in "My reminders".
 enum ReminderSource { personal, template, prayer }
 
+/// Look of the app, chosen in Settings (light by default).
+enum AppTheme { light, dark }
+
 /// Wake-up or bedtime: reminders that follow the user's day, not a clock time.
 enum Anchor { wake, sleep }
 
