@@ -122,12 +122,13 @@ Swap fakes for SQLite in `main.dart`, run the end-to-end flow on the emulator, c
 - **Python 3.12** to build the seed DB and run its tests (not installed on this machine).
 - Font files from the official `google/fonts` repository (OFL).
 - An Android emulator or device for Phase 4. A Mac only when iOS builds are needed.
+- Android SDK on Windows (Android Studio, 20 Oct 2026): also install **NDK 28.2.13676358** and **CMake 3.22.1** (needed by the `jni` plugin). Install them with `cmdline-tools/latest/bin/android.exe sdk install "ndk;28.2.13676358"` and `"cmake;3.22.1"`: since cmdline-tools 23.0, `sdkmanager.bat` is a batch wrapper that splits package names at `;`, so Gradle's automatic install of these fails.
 
 ## 8. Status — 19 Oct 2026
 All five work packages are merged on `app/milestone-1`: 220 app tests, 68 core tests and 10 seed tests pass, and `flutter analyze` is clean. Every screen was checked against its artboard in the web preview (it/en, light/dark).
 
 Still open (updated for milestone 2, §9):
-- **Device checks (§6):** nothing has run on Android or iOS yet (no Android SDK or Mac on the dev machine). Pending: delivery, reboot restore, exact alarms, permission prompts, notification taps (the navigation itself is covered by widget tests), the GPS permission flow and fix (`geolocator`, coarse location only), the v2 → v3 migration on a real install (it copies ~34,000 cities with `ATTACH`).
+- **Device checks (§6):** a release build now runs on the Android emulator (API 37): it starts, shows Home and Settings, and keeps a changed setting across a restart. Release builds crashed on start until 20 Oct 2026: `shared_preferences_android` 2.5.0 calls its Kotlin code through JNI and R8 renamed the classes it looks up by name; `android/app/proguard-rules.pro` keeps them and CI checks every release APK with `scripts/check_apk_jni_signatures.sh`. Nothing has run on iOS (no Mac). Still pending on Android: delivery, reboot restore, exact alarms, permission prompts, notification taps (the navigation itself is covered by widget tests), the GPS permission flow and fix (`geolocator`, coarse location only), the v2 → v3 migration on a real install (it copies ~34,000 cities with `ATTACH`).
 - **Background reschedule** (WorkManager / BGAppRefresh): not ported; reschedule happens at launch, on every change, and on resume after 6 h. A pause that ends while the app is closed is fine (the planner already scheduled what follows it), but a long pause uses one-off notifications and needs the app opened within the 14-day window.
 - **City names are not localized:** GeoNames gives one name per city ("Milan"); the search also matches other Latin-script names ("Milano"), but the label shows the GeoNames name. Country is shown as its ISO code ("IT · Europe/Rome").
 - **iOS location prompt text** is English only (`NSLocationWhenInUseUsageDescription`, no `InfoPlist.strings` yet).

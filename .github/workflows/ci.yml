@@ -110,6 +110,8 @@ jobs:
           fi
           echo "NIYAH_KEYSTORE_PATH=$ks" >> "$GITHUB_ENV"
       - run: flutter build apk --release
+      - name: JNI signatures survived R8 (release-only crash guard)
+        run: ../../scripts/check_apk_jni_signatures.sh build/app/outputs/flutter-apk/app-release.apk
       - name: Fingerprint of the key that signed the APK
         run: |
           apksigner="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)/apksigner"
