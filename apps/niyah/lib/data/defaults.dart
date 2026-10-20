@@ -18,6 +18,9 @@ class Defaults {
 
   static const prayerDuringQuiet = true;
 
+  /// Light, whatever the phone uses; dark only when chosen in Settings.
+  static const theme = AppTheme.light;
+
   /// Asr: 'shafi' (standard: Shafi'i, Maliki, Hanbali) or 'hanafi'.
   static const madhab = 'shafi';
 

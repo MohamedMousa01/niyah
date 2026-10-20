@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:niyah/app.dart';
 import 'package:niyah/app_scope.dart';
 import 'package:niyah/core/widgets/widgets.dart';
 import 'package:niyah/data/defaults.dart';
@@ -116,6 +118,51 @@ void main() {
     expect(find.text('English'), findsOneWidget);
   });
 
+  group('theme', () {
+    Brightness brightness(WidgetTester tester) => Theme.of(tester.element(find.byType(SettingsScreen))).brightness;
+    SystemUiOverlayStyle statusBar(WidgetTester tester) =>
+        tester.widget<AnnotatedRegion<SystemUiOverlayStyle>>(find.byType(AnnotatedRegion<SystemUiOverlayStyle>).first).value;
+
+    testWidgets('light by default, even when the phone is dark', (tester) async {
+      setPhone(tester, dark: true);
+      final s = AppServices.fake();
+      await s.init();
+      await tester.pumpWidget(NiyahApp(services: s));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Settings').last);
+      await tester.pumpAndSettle();
+      expect(s.settings.theme, AppTheme.light);
+      expect(brightness(tester), Brightness.light);
+      expect(statusBar(tester), SystemUiOverlayStyle.dark); // dark icons on the light background
+    });
+
+    testWidgets('Dark switches the whole app and its status bar, Light switches back', (tester) async {
+      final s = await openSettings(tester);
+      await tapVisible(tester, find.text('Dark'));
+      expect(s.settings.theme, AppTheme.dark);
+      expect(brightness(tester), Brightness.dark);
+      expect(statusBar(tester), SystemUiOverlayStyle.light);
+
+      // Other screens follow too.
+      await tester.tap(find.text('Home'));
+      await tester.pumpAndSettle();
+      expect(Theme.of(tester.element(find.text('MyNiyah'))).brightness, Brightness.dark);
+
+      await tester.tap(find.text('Settings').last);
+      await tester.pumpAndSettle();
+      await tapVisible(tester, find.text('Light'));
+      expect(s.settings.theme, AppTheme.light);
+      expect(brightness(tester), Brightness.light);
+    });
+
+    testWidgets('Italian labels', (tester) async {
+      await openSettings(tester, lang: 'it');
+      await tester.scrollUntilVisible(find.text('Scuro'), 200, scrollable: settingsList);
+      expect(find.text('ASPETTO'), findsOneWidget);
+      expect(find.text('Chiaro'), findsOneWidget);
+    });
+  });
+
   testWidgets('Italian texts', (tester) async {
     await openSettings(tester, lang: 'it');
     expect(find.text('ORARI DI PREGHIERA'), findsOneWidget);
@@ -133,6 +180,7 @@ void main() {
     await tapVisible(tester, find.text('Italiano'));
     expect(s.settings.languageCode, 'it');
     expect(find.text('Impostazioni'), findsWidgets); // title and tab
+    await tester.scrollUntilVisible(find.text('ORARI DI PREGHIERA'), -200, scrollable: settingsList);
     expect(find.text('ORARI DI PREGHIERA'), findsOneWidget);
 
     await tester.tap(find.text('Promemoria').last);
@@ -143,6 +191,7 @@ void main() {
     await tester.pumpAndSettle();
     await tapVisible(tester, find.text('Lingua del telefono (English)'));
     expect(s.settings.languageCode, isNull);
+    await tester.scrollUntilVisible(find.text('PRAYER TIMES'), -200, scrollable: settingsList);
     expect(find.text('PRAYER TIMES'), findsOneWidget);
   });
 
@@ -201,6 +250,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(s.settings.quietHours.end, const LocalTime(7, 0));
 
+    await tester.ensureVisible(switchOf('Quiet hours'));
+    await tester.pumpAndSettle();
     await tester.tap(switchOf('Quiet hours'));
     await tester.pumpAndSettle();
     expect(s.settings.quietHours.enabled, isFalse);

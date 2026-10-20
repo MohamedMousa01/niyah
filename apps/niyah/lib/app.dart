@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'app_scope.dart';
@@ -69,12 +70,20 @@ class _NiyahAppState extends State<NiyahApp> {
         listenable: settings,
         builder: (context, _) {
           final language = settings.languageCode;
+          final dark = settings.theme == AppTheme.dark;
           return MaterialApp.router(
             onGenerateTitle: (context) => AppLocalizations.of(context).appName,
             debugShowCheckedModeBanner: false,
             theme: NiyahTheme.light(),
             darkTheme: NiyahTheme.dark(),
-            themeMode: ThemeMode.system,
+            // The theme chosen in Settings (light by default), not the phone's.
+            themeMode: dark ? ThemeMode.dark : ThemeMode.light,
+            // Status and navigation bar icons follow the app's theme, so they
+            // stay readable when it differs from the phone's.
+            builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
+              value: dark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
+              child: child!,
+            ),
             // The language chosen in Settings wins over the phone's.
             locale: language == null ? null : Locale(language),
             localizationsDelegates: const [

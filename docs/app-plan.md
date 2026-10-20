@@ -149,6 +149,7 @@ No artboard exists for Settings: it is built from the design system (`NiyahCard`
 | Quiet hours | `SettingsStore.quietHours` (core `QuietHours`, mode `skip`) | Prayer reminders keep their own "during quiet hours" switch. |
 | Pause all | `SettingsStore.pausedUntil` (1 day, 3 days, 1 week, or `SettingsStore.pausedForever`) | Planner `pausedUntil`. |
 | My day | `SettingsStore.anchors` | Same editor as the wake/bed setup sheet (`AnchorFields`). |
+| Theme (light / dark) | `SettingsStore.theme` (`AppTheme`, default **light**, added 20 Oct 2026) | `MaterialApp.themeMode`; the app no longer follows the phone's dark mode. Status and navigation bar icons follow the app theme (`AnnotatedRegion<SystemUiOverlayStyle>`). |
 
 Every setter notifies; `main.dart` reschedules on each change. `CorePrayerRepository` and `ScheduleSource` read location, method, madhab, quiet hours and pause from the settings (`ScheduleInputs` has no defaults any more).
 
