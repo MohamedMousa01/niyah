@@ -1,8 +1,8 @@
 {
   "projects": {
-    "default": "niyah-dev",
-    "dev": "niyah-dev",
-    "staging": "niyah-staging",
-    "prod": "niyah-prod"
+    "default": "myniyah-330c7",
+    "dev": "myniyah-330c7",
+    "staging": "myniyah-330c7",
+    "prod": "myniyah-330c7"
   }
 }
