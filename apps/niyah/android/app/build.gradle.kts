@@ -1,5 +1,8 @@
 plugins {
     id("com.android.application")
+    // START: FlutterFire Configuration
+    id("com.google.gms.google-services")
+    // END: FlutterFire Configuration
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
@@ -10,7 +13,7 @@ plugins {
 val niyahKeystore = System.getenv("NIYAH_KEYSTORE_PATH")?.takeIf { it.isNotBlank() }?.let { file(it) }
 
 android {
-    namespace = "app.niyah.niyah"
+    namespace = "app.niyah"
     // flutter_local_notifications needs compileSdk 35+ and core library desugaring.
     compileSdk = 36
     ndkVersion = flutter.ndkVersion
@@ -22,8 +25,7 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "app.niyah.niyah"
+        applicationId = "app.niyah"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

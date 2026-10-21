@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -7,11 +8,14 @@ import 'package:flutter/widgets.dart';
 import 'app.dart';
 import 'app_scope.dart';
 import 'device_services_stub.dart' if (dart.library.io) 'device_services.dart';
+import 'firebase_options.dart';
 import 'notifications/local_notification_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   _registerFontLicenses();
+  // Local only (no network). Firebase is configured for Android and iOS only.
+  if (_isMobile) await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   final services = (_isMobile ? await deviceServices() : null) ?? AppServices.fake();
   await services.init();
   runApp(NiyahApp(services: services));
