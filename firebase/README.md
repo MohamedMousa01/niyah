@@ -121,6 +121,9 @@ cd functions && npm install
 npx firebase deploy --only functions -P dev
 ```
 
+- Se il deploy si ferma con `User code failed to load ... Timeout after 10000`, il codice non ha errori: il CLI concede solo 10 s per caricare `functions/` e il primo caricamento (soprattutto su Windows) può impiegarne di più. Rilanciare con un limite più alto: `FUNCTIONS_DISCOVERY_TIMEOUT=60 npx firebase deploy --only functions -P dev` (PowerShell: `$env:FUNCTIONS_DISCOVERY_TIMEOUT=60` prima del comando).
+- Al primo deploy di un progetto i trigger Firestore possono fallire con `Permission denied while using the Eventarc Service Agent`: le API sono appena state attivate e i permessi impiegano qualche minuto a propagarsi. Basta ripetere il deploy dopo alcuni minuti.
+
 ⚠️ La regione è `europe-west1` (in `src/index.ts`): deve essere compatibile con la posizione del database Firestore scelta alla creazione del progetto. Se il database è altrove (es. `nam5`), cambiare la regione prima del deploy.
 
 ### Test

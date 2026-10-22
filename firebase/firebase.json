@@ -7,7 +7,7 @@
     {
       "source": "functions",
       "codebase": "default",
-      "ignore": ["node_modules", ".git", "*.log", "src", "test", "lib/test", "scripts"],
+      "ignore": ["node_modules", ".git", "*.log", "*.ts", "*.test.js", "*.test.js.map", "scripts"],
       "predeploy": ["npm --prefix \"$RESOURCE_DIR\" run build"]
     }
   ],
