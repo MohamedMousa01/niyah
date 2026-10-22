@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 
 import 'data/fake/fake_repositories.dart';
 import 'data/repositories.dart';
+import 'data/sync/content_sync.dart';
 
 /// Everything the screens need, created once in `main.dart`.
 class AppServices {
@@ -13,6 +14,9 @@ class AppServices {
   final CityRepository cities;
   final LocationService location;
 
+  /// Downloads curated content into SQLite; null without Firebase (tests, web).
+  final ContentSync? contentSync;
+
   const AppServices({
     required this.reminders,
     required this.templates,
@@ -21,6 +25,7 @@ class AppServices {
     required this.notifications,
     required this.cities,
     required this.location,
+    this.contentSync,
   });
 
   /// In-memory services: widget tests and the web preview. [settings]

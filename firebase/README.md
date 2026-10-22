@@ -6,7 +6,7 @@ Questa cartella contiene il livello di sicurezza Firestore di Niyah:
 |---|---|
 | `firestore.rules` | regole di produzione (default deny) |
 | `firestore.indexes.json` | indici composti per la sync incrementale |
-| `firebase.json`, `.firebaserc` | configurazione CLI ed emulatore; alias `dev`, `staging`, `prod` |
+| `firebase.json`, `.firebaserc` | configurazione CLI ed emulatore; alias `dev`, `staging`, `prod` (per ora tutti sul progetto `myniyah-330c7`) |
 | `test/rules.test.js` | test delle regole contro l'emulatore Firestore |
 | `functions/` | Cloud Functions (TypeScript): versione dei contenuti, tombstone, verifica, ruoli admin |
 
@@ -57,7 +57,25 @@ npx firebase login
 npx firebase deploy --only firestore:rules,firestore:indexes -P dev
 ```
 
-Per gli altri ambienti: `-P staging`, `-P prod`.
+Per gli altri ambienti: `-P staging`, `-P prod`. Per ora esiste un solo progetto, `myniyah-330c7` (Firestore in `eur3`, piano Blaze): i tre alias puntano tutti lì. Quando nasceranno progetti separati basta cambiare `.firebaserc`.
+
+## Aggiungere un modello dalla console
+
+La console Firebase ignora le regole: un documento scritto a mano deve avere da sé i campi che l'app legge, altrimenti l'app lo salta (e lo scrive nel log).
+
+`notificationTemplates/{id}`:
+
+| Campo | Tipo | Note |
+|---|---|---|
+| `active` | boolean | `true` |
+| `updatedAt` | **timestamp** | obbligatorio: senza (o come stringa) il documento non arriva mai all'app |
+| `i18n` | map | `{en: {title, body}, it: {title, body}}` (lingue: `it`, `en`, `ar`, `fr`) |
+| `defaultSchedule` | map | come `seed/data/templates.json`, es. `{schedule_type: "daily", time: "08:00", days_mask: 127}` |
+| `groupKey` | string | `prayer` \| `daily` \| `dhikr` \| `weekly`; senza, il modello non compare in "Aggiungi un promemoria" |
+| `icon` | string | chiave dell'icona nell'app (es. `heart`) |
+| `section`, `channel` | string | facoltativi (`suggested`, `niyyah`) |
+
+La Cloud Function incrementa `meta/contentVersion`: l'app scarica il modello al successivo avvio (dopo la prima schermata, mai bloccando l'avvio) e da lì compare in "Aggiungi un promemoria".
 
 ## Test
 
@@ -89,7 +107,7 @@ Una volta per ambiente, dal proprio computer (l'utente deve già esistere in Aut
 ```bash
 cd functions && npm install
 gcloud auth application-default login
-node scripts/first-superadmin.js --project niyah-dev --email tua@email
+node scripts/first-superadmin.js --project myniyah-330c7 --email tua@email
 ```
 
 Lo script si rifiuta se esiste già un superAdmin. Il ruolo vale dal successivo accesso al pannello.
@@ -102,6 +120,9 @@ Le Cloud Functions richiedono il piano **Blaze** sul progetto.
 cd functions && npm install
 npx firebase deploy --only functions -P dev
 ```
+
+- Se il deploy si ferma con `User code failed to load ... Timeout after 10000`, il codice non ha errori: il CLI concede solo 10 s per caricare `functions/` e il primo caricamento (soprattutto su Windows) può impiegarne di più. Rilanciare con un limite più alto: `FUNCTIONS_DISCOVERY_TIMEOUT=60 npx firebase deploy --only functions -P dev` (PowerShell: `$env:FUNCTIONS_DISCOVERY_TIMEOUT=60` prima del comando).
+- Al primo deploy di un progetto i trigger Firestore possono fallire con `Permission denied while using the Eventarc Service Agent`: le API sono appena state attivate e i permessi impiegano qualche minuto a propagarsi. Basta ripetere il deploy dopo alcuni minuti.
 
 ⚠️ La regione è `europe-west1` (in `src/index.ts`): deve essere compatibile con la posizione del database Firestore scelta alla creazione del progetto. Se il database è altrove (es. `nam5`), cambiare la regione prima del deploy.
 

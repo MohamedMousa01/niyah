@@ -9,9 +9,12 @@ import 'data/sqlite/schedule_source.dart';
 import 'data/sqlite/sqlite_city_repository.dart';
 import 'data/sqlite/sqlite_reminder_repository.dart';
 import 'data/sqlite/sqlite_template_repository.dart';
+import 'data/sync/content_sync.dart';
+import 'data/sync/firestore_content_source.dart';
 import 'notifications/local_notification_service.dart';
 
-/// SQLite repositories and real local notifications (Android and iOS).
+/// SQLite repositories, real local notifications and the content sync
+/// (Android and iOS; Firebase is initialized first in `main.dart`).
 Future<AppServices?> deviceServices() async {
   final db = await NiyahDatabase.open();
   final settings = PrefsSettingsStore();
@@ -30,5 +33,6 @@ Future<AppServices?> deviceServices() async {
     ),
     cities: SqliteCityRepository(db),
     location: GeolocatorLocationService(),
+    contentSync: ContentSync(db, FirestoreContentSource.instance()),
   );
 }

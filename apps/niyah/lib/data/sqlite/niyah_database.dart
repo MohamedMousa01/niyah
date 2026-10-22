@@ -25,6 +25,11 @@ class NiyahDatabase {
   /// seed after a migration, so new or changed templates reach old installs.
   static const seedTables = ['categories', 'category_i18n', 'templates', 'template_i18n', 'cities'];
 
+  /// Prefix of the `sync_meta` keys of the content sync (`ContentSync`).
+  /// A migration clears them: the seed tables lose what the sync added, so
+  /// the next sync starts over and downloads it again.
+  static const contentSyncMetaPrefix = 'content_sync.';
+
   /// [factory] and [path] default to sqflite's; tests pass the FFI factory and
   /// a temporary file. [loadSeed] defaults to the bundled asset.
   static Future<NiyahDatabase> open({DatabaseFactory? factory, String? path, SeedLoader? loadSeed}) async {
@@ -86,6 +91,7 @@ class NiyahDatabase {
           final cols = [for (final c in await txn.rawQuery('PRAGMA main.table_info($table)')) c['name']].join(', ');
           await txn.execute('INSERT INTO main.$table ($cols) SELECT $cols FROM seed.$table');
         }
+        await txn.delete('sync_meta', where: 'key LIKE ?', whereArgs: ['$contentSyncMetaPrefix%']);
         await txn.execute('PRAGMA user_version = $version');
       });
     } finally {

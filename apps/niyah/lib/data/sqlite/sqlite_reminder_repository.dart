@@ -98,10 +98,21 @@ class SqliteReminderRepository extends ReminderRepository {
 
   static const _defaultPrayer = ReminderItem(id: prayerId, source: ReminderSource.prayer, schedule: Defaults.prayerReminder);
 
+  /// Channel and category of a template; one the content sync added after
+  /// [init] is read from the database.
+  Future<({String channel, String? category})?> _template(String? id) async {
+    if (id == null) return null;
+    final cached = _templates[id];
+    if (cached != null) return cached;
+    final rows = await _db.db.query('templates', columns: ['channel', 'category_id'], where: 'id = ?', whereArgs: [id]);
+    if (rows.isEmpty) return null;
+    return _templates[id] = (channel: rows.first['channel'] as String, category: rows.first['category_id'] as String?);
+  }
+
   /// Upsert. A row deleted earlier with the same id comes back.
   Future<void> _write(ReminderItem r) async {
     final isTemplate = r.source == ReminderSource.template;
-    final template = isTemplate ? _templates[r.templateId] : null;
+    final template = isTemplate ? await _template(r.templateId) : null;
     final row = <String, Object?>{
       'kind': r.source.name,
       'template_id': r.templateId,

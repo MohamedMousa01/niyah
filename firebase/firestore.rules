@@ -155,14 +155,17 @@ service cloud.firestore {
     function validNotificationTemplate(d) {
       return d.keys().hasOnly(['categoryId', 'contentType', 'defaultSchedule', 'editableByUser',
                                'seasonal', 'active', 'i18n', 'section', 'channel',
-                               'sourceContentId', 'createdAt', 'updatedAt'])
+                               'sourceContentId', 'groupKey', 'icon', 'createdAt', 'updatedAt'])
           && d.get('active', null) is bool
           && d.get('i18n', null) is map
           && hasUpdatedAt(d)
           && optString(d, 'categoryId') && optString(d, 'contentType')
           && optMap(d, 'defaultSchedule') && optBool(d, 'editableByUser')
           && optBool(d, 'seasonal') && optTimestamp(d, 'createdAt')
-          && optString(d, 'section') && optString(d, 'channel') && optString(d, 'sourceContentId');
+          && optString(d, 'section') && optString(d, 'channel') && optString(d, 'sourceContentId')
+          // Gruppo in "Aggiungi un promemoria" (null = non mostrato) e icona nell'app.
+          && (d.get('groupKey', null) == null || d.groupKey in ['prayer', 'daily', 'dhikr', 'weekly'])
+          && optString(d, 'icon');
     }
 
     function validIslamicEvent(d) {

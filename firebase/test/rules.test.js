@@ -23,6 +23,7 @@ const {
   where,
   orderBy,
   limit,
+  startAfter,
   getDocs,
   documentId,
   serverTimestamp,
@@ -438,6 +439,11 @@ describe('contentAdmin: pubblicazione e validazione', () => {
     await assertFails(setDoc(doc(ca(), 'notificationTemplates/t2'), tpl));
     await assertFails(setDoc(doc(withRole('notificationAdmin'), 'notificationTemplates/t3'), { ...tpl, channel: 5 }));
     await assertFails(setDoc(doc(withRole('notificationAdmin'), 'notificationTemplates/t4'), { ...tpl, extra: 'x' }));
+    // Gruppo e icona per "Aggiungi un promemoria" nell'app.
+    await assertSucceeds(setDoc(doc(withRole('notificationAdmin'), 'notificationTemplates/t5'), { ...tpl, groupKey: 'weekly', icon: 'book' }));
+    await assertSucceeds(setDoc(doc(withRole('notificationAdmin'), 'notificationTemplates/t6'), { ...tpl, groupKey: null }));
+    await assertFails(setDoc(doc(withRole('notificationAdmin'), 'notificationTemplates/t7'), { ...tpl, groupKey: 'monthly' }));
+    await assertFails(setDoc(doc(withRole('notificationAdmin'), 'notificationTemplates/t8'), { ...tpl, icon: 3 }));
   });
 
   it('topicContent: id = topicId_contentId e flag active obbligatorio', async () => {
@@ -560,6 +566,25 @@ describe('Tombstones', () => {
     await assertFails(setDoc(doc(withRole('superAdmin'), 'tombstones/t2'), t));
     await assertFails(updateDoc(doc(withRole('contentAdmin'), 'tombstones/t1'), { docId: 'x' }));
     await assertFails(deleteDoc(doc(withRole('superAdmin'), 'tombstones/t1')));
+  });
+});
+
+describe("Query della sync dell'app (apps/niyah, FirestoreContentSource)", () => {
+  // updatedAt >= minimo, orderBy updatedAt poi id, startAfter (updatedAt, id).
+  const MIN = new Timestamp(-62135596800, 0);
+  const syncQuery = (db, coll, ...filter) =>
+    query(collection(db, coll), ...filter, where('updatedAt', '>=', MIN), orderBy('updatedAt'), orderBy(documentId()),
+      startAfter(new Timestamp(0, 0), 'a'), limit(100));
+
+  it('anonima, con il filtro richiesto dalle regole', async () => {
+    const snap = await assertSucceeds(getDocs(syncQuery(anon(), 'categories', where('active', '==', true))));
+    assert.deepStrictEqual(snap.docs.map((d) => d.id), ['catOn']);
+    await assertSucceeds(getDocs(syncQuery(anon(), 'notificationTemplates', where('active', '==', true))));
+    await assertSucceeds(getDocs(syncQuery(anon(), 'contentItems', where('status', '==', 'published'))));
+    await assertFails(getDocs(syncQuery(anon(), 'categories')));
+    const tomb = await assertSucceeds(getDocs(query(collection(anon(), 'tombstones'), where('removedAt', '>=', MIN),
+      orderBy('removedAt'), orderBy(documentId()), limit(100))));
+    assert.strictEqual(tomb.size, 1);
   });
 });
 

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "504162620952",
+    "project_id": "myniyah-330c7",
+    "storage_bucket": "myniyah-330c7.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:504162620952:android:c7b0f7fa6cdd908664556d",
+        "android_client_info": {
+          "package_name": "app.niyah"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAizaeHEkMNpPIJKYXP1mn0tw5WSpwsL2o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,4 +1,4 @@
-package app.niyah.niyah
+package app.niyah
 
 import io.flutter.embedding.android.FlutterActivity
 

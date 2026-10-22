@@ -167,5 +167,18 @@ void main() {
       expect(File('${temp.dir.path}/niyah_seed_migration.db').existsSync(), isFalse);
       expect((await db.rawQuery('PRAGMA database_list')).map((r) => r['name']), isNot(contains('seed')));
     });
+
+    test('restarts the content sync, whose additions the seed tables lost', () async {
+      await createV2();
+      final old = await temp.open(); // already v3: write the v2 state again
+      await old.db.insert('sync_meta', {'key': '${NiyahDatabase.contentSyncMetaPrefix}cursor.notificationTemplates', 'value': 'c'});
+      final deviceId = await old.deviceId();
+      await old.db.execute('PRAGMA user_version = 2');
+      await old.close();
+      final db = await temp.open();
+      expect(await db.db.query('sync_meta', where: 'key LIKE ?', whereArgs: ['${NiyahDatabase.contentSyncMetaPrefix}%']),
+          isEmpty);
+      expect(await db.deviceId(), deviceId);
+    });
   });
 }
